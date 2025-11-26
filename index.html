@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Terra do Sol - Parquinho</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+<header>
+  <img src="icon-192.png" class="logo">
+  <h1>Terra do Sol - Parquinho Infantil</h1>
+</header>
+
+<nav>
+  <button onclick="openTab('cadastro')">Cadastro</button>
+  <button onclick="openTab('impressao')">Impressão</button>
+</nav>
+
+<main>
+  <section id="cadastro" class="tab active">
+    <h2>Cadastrar Criança</h2>
+    <form id="formCadastro">
+      <label>Nome</label>
+      <input id="nome">
+      <label>Responsável</label>
+      <input id="responsavel">
+      <label>Telefone</label>
+      <input id="telefone">
+      <button type="button" onclick="salvar()">Salvar</button>
+    </form>
+    <div id="qrArea"></div>
+  </section>
+
+  <section id="impressao" class="tab">
+    <h2>Impressão e Relatórios</h2>
+    <label>Filtrar por data:</label>
+    <input type="date" id="filtroData" onchange="carregarLista()">
+    <ul id="lista"></ul>
+    <button onclick="imprimir()">Imprimir Lista</button>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
