@@ -1,104 +1,154 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Escala — Ajudantes</title>
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <title>Escala Terra do Sol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <header class="app-header">
+    <div class="logo-mini">
+      <span>🌞</span>
+    </div>
+    <div class="title-group">
+      <h1>Terra do Sol</h1>
+      <p>Escala de Almoço, Lanche e Aparadores</p>
+    </div>
+  </header>
 
-<header class="topbar">
-    <h1 class="topbar-title">Escala — Ajudantes</h1>
-</header>
+  <nav class="tabs">
+    <button class="tab-button active" data-target="section-equipe">Equipe</button>
+    <button class="tab-button" data-target="section-dia">Escala do Dia</button>
+    <button class="tab-button" data-target="section-semana">Semana</button>
+    <button class="tab-button" data-target="section-historico">Histórico</button>
+    <button class="tab-button" data-target="section-config">Configurações</button>
+  </nav>
 
-<main class="container">
-
-<section class="tabs">
-    <button class="tab-btn active" data-tab="colaboradores">Colaboradores</button>
-    <button class="tab-btn" data-tab="escala">Escala</button>
-    <button class="tab-btn" data-tab="funcoes">Funções</button>
-</section>
-
-<!-- ============================
-     TAB: COLABORADORES
-============================= -->
-<section class="tab-content active" id="colaboradores">
-
-    <div class="card">
-        <h2>Cadastro de Colaboradores</h2>
-
-        <div class="field-row">
-            <input id="nomeColaborador" class="input" placeholder="Nome do colaborador" />
-            <button id="btnAddColaborador" class="primary">Adicionar</button>
+  <main>
+    <!-- EQUIPE -->
+    <section id="section-equipe" class="tab-section active">
+      <h2>Cadastro de Equipe</h2>
+      <form id="form-add-funcionario" class="card">
+        <label for="nome-funcionario">Nome do colaborador</label>
+        <div class="inline-form">
+          <input type="text" id="nome-funcionario" placeholder="Ex: João, Maria..." required />
+          <button type="submit">Adicionar</button>
         </div>
+      </form>
 
-        <div id="listaColaboradores" class="colab-list"></div>
-    </div>
-
-</section>
-
-<!-- ============================
-     TAB: FUNÇÕES (HTML ESTÁTICO)
-============================= -->
-<section class="tab-content" id="funcoes">
-
-    <div class="card funcao-card">
-        <h2>Almoço 1</h2>
-
-        <div class="funcao-controls">
-            <input type="number" min="1" value="1" class="quantidade-funcao" />
-            <button class="mark-all-btn secondary">Marcar todos</button>
-            <button class="unmark-all-btn secondary">Desmarcar</button>
+      <div class="card">
+        <div class="card-header-row">
+          <h3>Lista de colaboradores</h3>
+          <span id="total-funcionarios" class="badge">0</span>
         </div>
+        <ul id="lista-funcionarios" class="list"></ul>
+        <p class="tip">
+          Dica: cadastre todos os ajudantes, garçons e apoio da barraca.  
+          Depois, na aba <strong>Escala do Dia</strong>, você marca quem está presente.
+        </p>
+      </div>
+    </section>
 
-        <ul class="colaboradores-lista-selecao" data-funcao="almoco1"></ul>
-    </div>
+    <!-- ESCALA DO DIA -->
+    <section id="section-dia" class="tab-section">
+      <h2>Escala do Dia</h2>
 
-    <div class="card funcao-card">
-        <h2>Almoço 2</h2>
+      <div class="card">
+        <label for="data-dia">Data da escala</label>
+        <input type="date" id="data-dia" />
+      </div>
 
-        <div class="funcao-controls">
-            <input type="number" min="1" value="1" class="quantidade-funcao" />
-            <button class="mark-all-btn secondary">Marcar todos</button>
-            <button class="unmark-all-btn secondary">Desmarcar</button>
+      <div class="card">
+        <div class="card-header-row">
+          <h3>Quem está presente hoje?</h3>
+          <span id="total-presentes" class="badge">0</span>
         </div>
+        <ul id="lista-presenca" class="list"></ul>
+        <p class="tip">Marque apenas quem está trabalhando nesse dia.</p>
+      </div>
 
-        <ul class="colaboradores-lista-selecao" data-funcao="almoco2"></ul>
-    </div>
+      <div class="actions-row">
+        <button id="btn-gerar-dia" class="primary">Gerar escala do dia</button>
+        <button id="btn-salvar-dia" class="secondary" disabled>Salvar no histórico</button>
+      </div>
 
-    <div class="card funcao-card">
-        <h2>Lanche</h2>
-
-        <div class="funcao-controls">
-            <input type="number" min="1" value="1" class="quantidade-funcao" />
-            <button class="mark-all-btn secondary">Marcar todos</button>
-            <button class="unmark-all-btn secondary">Desmarcar</button>
+      <section class="card preview-card">
+        <h3>Pré-visualização (igual à impressão)</h3>
+        <div id="preview-dia" class="preview-area empty">
+          <p>Nenhuma escala gerada ainda.</p>
         </div>
+        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir / PDF</button>
+      </section>
+    </section>
 
-        <ul class="colaboradores-lista-selecao" data-funcao="lanche"></ul>
-    </div>
+    <!-- ESCALA DA SEMANA -->
+    <section id="section-semana" class="tab-section">
+      <h2>Escala da Semana</h2>
+      <div class="card">
+        <label for="data-semana">Data inicial</label>
+        <input type="date" id="data-semana" />
+        <p class="tip">O app gera 7 dias a partir dessa data.</p>
+      </div>
 
-</section>
+      <div class="actions-row">
+        <button id="btn-gerar-semana" class="primary">Gerar escala da semana</button>
+      </div>
 
-<!-- ============================
-     TAB: GERAR ESCALA
-============================= -->
-<section class="tab-content" id="escala">
+      <section class="card preview-card">
+        <h3>Pré-visualização da semana</h3>
+        <div id="preview-semana" class="preview-area empty">
+          <p>Nenhuma escala semanal gerada ainda.</p>
+        </div>
+        <button id="btn-imprimir-semana" class="primary" disabled>Imprimir semana</button>
+      </section>
+    </section>
 
-    <div class="card">
-        <h2>Gerar Escala</h2>
-        <button id="btnGerarEscala" class="primary full">Gerar</button>
-    </div>
+    <!-- HISTÓRICO -->
+    <section id="section-historico" class="tab-section">
+      <h2>Histórico de Escalas</h2>
+      <div class="card">
+        <ul id="lista-historico" class="list"></ul>
+        <p class="tip">
+          Aqui ficam as escalas salvas.  
+          Você pode reabrir para visualizar e imprimir novamente.
+        </p>
+      </div>
+      <div class="actions-row">
+        <button id="btn-apagar-historico" class="danger">Apagar todo histórico</button>
+      </div>
+    </section>
 
-    <div id="previewEscala"></div>
+    <!-- CONFIGURAÇÕES -->
+    <section id="section-config" class="tab-section">
+      <h2>Configurações</h2>
 
-</section>
+      <div class="card">
+        <h3>Logo da barraca</h3>
+        <p>Escolha a imagem que vai sair no topo da impressão.</p>
+        <input type="file" id="input-logo" accept="image/*" />
+        <div class="logo-preview-wrapper">
+          <div id="logo-preview-container" class="logo-preview">
+            <p>Nenhuma logo selecionada.</p>
+          </div>
+        </div>
+        <button id="btn-remover-logo" class="secondary">Remover logo</button>
+      </div>
 
-</main>
+      <div class="card">
+        <h3>Rodízio</h3>
+        <p>
+          O app faz rodízio automático para não repetir sempre as mesmas pessoas nas mesmas funções.
+        </p>
+        <button id="btn-reset-rodizio" class="secondary">Resetar rodízio</button>
+      </div>
+    </section>
+  </main>
 
-<script src="script.js"></script>
+  <!-- ÁREA DE IMPRESSÃO (dia ou semana) -->
+  <div id="print-area"></div>
 
+  <script src="script.js"></script>
 </body>
 </html>
