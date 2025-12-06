@@ -1,73 +1,106 @@
-// carregar
-function loadFuncionarios(){return JSON.parse(localStorage.getItem("funcs")||"[]")}
-function saveFuncionarios(l){localStorage.setItem("funcs",JSON.stringify(l))}
+// STORAGE
+const KEY = "tds_funcionarios";
+let funcionarios = JSON.parse(localStorage.getItem(KEY) || "[]");
 
-let funcionarios = loadFuncionarios();
+// ELEMENTOS
+const inputNome = document.getElementById("nome-funcionario");
+const listaFuncionarios = document.getElementById("lista-funcionarios");
+const totalFuncionarios = document.getElementById("total-funcionarios");
 
-// renderizar lista
-function renderFuncionarios(){
-  const lista = document.getElementById("lista-funcionarios");
-  const total = document.getElementById("total-funcionarios");
+const listaPresenca = document.getElementById("lista-presenca");
+const totalPresentes = document.getElementById("total-presentes");
 
-  lista.innerHTML = "";
+const previewDia = document.getElementById("preview-dia");
+const btnGerar = document.getElementById("btn-gerar-dia");
+const btnImprimir = document.getElementById("btn-imprimir-dia");
 
-  funcionarios.forEach((f, index) => {
-    const li = document.createElement("li");
-    li.className = "list-item-row";
-    li.innerHTML = `
-      <span class="nome">${f}</span>
-      <div class="list-item-actions">
-        <button class="secondary small" onclick="editarFuncionario(${index})">Editar</button>
-        <button class="danger small" onclick="removerFuncionario(${index})">Remover</button>
-      </div>
-    `;
-    lista.appendChild(li);
+// ---------- FUNÇÕES ----------
+function salvar() {
+  localStorage.setItem(KEY, JSON.stringify(funcionarios));
+}
+
+function renderFuncionarios() {
+  listaFuncionarios.innerHTML = "";
+  funcionarios.forEach((f, i) => {
+    listaFuncionarios.innerHTML += `
+      <li class="list-item-row">
+        <span>${f}</span>
+        <button class="small secondary" onclick="editar(${i})">Editar</button>
+        <button class="small danger" onclick="remover(${i})">Excluir</button>
+      </li>`;
   });
 
-  total.textContent = funcionarios.length;
+  totalFuncionarios.textContent = funcionarios.length;
+  renderPresenca();
 }
 
-// adicionar
-document.getElementById("form-add-funcionario").addEventListener("submit", e=>{
-  e.preventDefault();
-  let nome = document.getElementById("nome-funcionario").value.trim();
-  if(nome){
-    funcionarios.push(nome);
-    saveFuncionarios(funcionarios);
-    renderFuncionarios();
-    document.getElementById("nome-funcionario").value="";
-  }
-});
-
-// remover
-function removerFuncionario(i){
-  if(confirm("Deseja remover?")){
-    funcionarios.splice(i,1);
-    saveFuncionarios(funcionarios);
-    renderFuncionarios();
-  }
+function renderPresenca() {
+  listaPresenca.innerHTML = "";
+  funcionarios.forEach((f, i) => {
+    listaPresenca.innerHTML += `
+    <li class="list-item-row">
+      <label><input type="checkbox" data-index="${i}"> ${f}</label>
+    </li>`;
+  });
 }
 
-// editar
-function editarFuncionario(i){
-  let novoNome = prompt("Alterar nome:", funcionarios[i]);
-  if(novoNome && novoNome.trim() !== ""){
+function remover(i) {
+  funcionarios.splice(i, 1);
+  salvar();
+  renderFuncionarios();
+}
+
+function editar(i) {
+  const novoNome = prompt("Editar nome:", funcionarios[i]);
+  if (novoNome && novoNome.trim() !== "") {
     funcionarios[i] = novoNome.trim();
-    saveFuncionarios(funcionarios);
+    salvar();
     renderFuncionarios();
   }
 }
 
-// tabs funcionando
-document.querySelectorAll(".tab-button").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    document.querySelectorAll(".tab-button").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-
-    document.querySelectorAll(".tab-section").forEach(s=>s.classList.remove("active"));
-    document.getElementById(btn.dataset.target).classList.add("active");
-  });
+// ---------- ADICIONAR ----------
+document.getElementById("form-add-funcionario").addEventListener("submit", e => {
+  e.preventDefault();
+  if (inputNome.value.trim() !== "") {
+    funcionarios.push(inputNome.value.trim());
+    inputNome.value = "";
+    salvar();
+    renderFuncionarios();
+  }
 });
 
-// iniciar
+// ---------- GERAR ESCALA ----------
+btnGerar.addEventListener("click", () => {
+  const presentes = [...document.querySelectorAll("#lista-presenca input:checked")]
+    .map(i => funcionarios[i.dataset.index]);
+
+  if (presentes.length === 0) {
+    alert("Selecione pelo menos 1 colaborador");
+    return;
+  }
+
+  previewDia.innerHTML = `
+    <h3>🍽 Almoço</h3>
+    <p>${presentes.join(", ")}</p>
+
+    <h3>☕ Lanche</h3>
+    <p>${presentes.join(", ")}</p>
+
+    <h3>🧺 Aparadores</h3>
+    <p>${presentes.slice(0,3).join(", ")}</p>
+
+    <h3>🍹 Bar</h3>
+    <p>${presentes.slice(0,2).join(", ")}</p>
+  `;
+
+  btnImprimir.disabled = false;
+});
+
+// ---------- IMPRESSÃO ----------
+btnImprimir.addEventListener("click", () => {
+  window.print();
+});
+
+// ---------- INICIALIZAÇÃO ----------
 renderFuncionarios();
