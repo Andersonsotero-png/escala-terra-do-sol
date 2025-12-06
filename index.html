@@ -24,14 +24,13 @@
   </nav>
 
   <main>
-
-    <!-- EQUIPE -->
     <section id="section-equipe" class="tab-section active">
       <h2>Cadastro de Equipe</h2>
+
       <form id="form-add-funcionario" class="card">
         <label>Nome do colaborador</label>
         <div class="inline-form">
-          <input type="text" id="nome-funcionario" placeholder="Ex: João, Maria..." required />
+          <input id="nome-funcionario" type="text" placeholder="Ex: João, Maria..." required>
           <button type="submit">Adicionar</button>
         </div>
       </form>
@@ -45,10 +44,59 @@
       </div>
     </section>
 
-    <!-- O resto permanece igual -->
-    
+    <section id="section-dia" class="tab-section">
+      <h2>Escala do Dia</h2>
+
+      <div class="card">
+        <label>Data</label>
+        <input type="date" id="data-dia">
+      </div>
+
+      <div class="card">
+        <div class="card-header-row">
+          <h3>Quem está presente?</h3>
+          <span id="total-presentes" class="badge">0</span>
+        </div>
+        <ul id="lista-presenca" class="list"></ul>
+      </div>
+
+      <div class="actions-row">
+        <button id="btn-gerar-dia" class="primary">Gerar</button>
+        <button id="btn-imprimir-dia" class="secondary" disabled>Imprimir</button>
+      </div>
+
+      <section class="card preview-card">
+        <h3>Pré-visualização da Escala</h3>
+        <div id="preview-dia" class="preview-area empty">
+          <p>Ainda não gerado.</p>
+        </div>
+      </section>
+    </section>
+
+    <section id="section-semana" class="tab-section">
+      <h2>Escala da Semana</h2>
+      <p>Função apenas visual — não alterado.</p>
+    </section>
+
+    <section id="section-historico" class="tab-section">
+      <h2>Histórico</h2>
+      <ul id="lista-historico" class="list"></ul>
+    </section>
+
+    <section id="section-config" class="tab-section">
+      <h2>Configurações</h2>
+
+      <div class="card">
+        <h3>Logo</h3>
+        <input type="file" id="input-logo">
+        <div id="logo-preview-container" class="logo-preview"></div>
+        <button id="btn-remover-logo">Remover</button>
+      </div>
+    </section>
   </main>
 
-<script src="script.js"></script>
+  <div id="print-area"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
