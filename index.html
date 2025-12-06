@@ -1,210 +1,154 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Parquinho App - Terra do Sol</title>
-
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/style.css" />
-
-  <!-- QRCode + jsQR -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Escala Terra do Sol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <img alt="logo" id="appLogo" src="assets/img/logo-terra-do-sol.png" />
-      <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
+  <header class="app-header">
+    <div class="logo-mini">
+      <span>🌞</span>
     </div>
-    <nav>
-      <button data-tab="cadastro" class="active">Cadastro</button>
-      <button data-tab="busca">Busca</button>
-      <button data-tab="historico">Histórico</button>
-      <button data-tab="marketing">Marketing</button>
-      <button data-tab="impressao">Impressão</button>
-    </nav>
+    <div class="title-group">
+      <h1>Terra do Sol</h1>
+      <p>Escala de Almoço, Lanche e Aparadores</p>
+    </div>
   </header>
 
+  <nav class="tabs">
+    <button class="tab-button active" data-target="section-equipe">Equipe</button>
+    <button class="tab-button" data-target="section-dia">Escala do Dia</button>
+    <button class="tab-button" data-target="section-semana">Semana</button>
+    <button class="tab-button" data-target="section-historico">Histórico</button>
+    <button class="tab-button" data-target="section-config">Configurações</button>
+  </nav>
+
   <main>
-    <!-- CADASTRO -->
-    <section id="cadastro" class="tab active">
-      <form id="formCadastro" autocomplete="off">
-        <label>Nome completo (criança):
-          <input type="text" name="nome" required />
-        </label>
-
-        <label>Data de nascimento:
-          <input type="date" name="dataNascimento" required />
-        </label>
-
-        <label>Idade:
-          <input type="number" name="idade" readonly />
-        </label>
-
-        <label>Nome do responsável:
-          <input type="text" name="responsavel" placeholder="Nome do responsável" />
-        </label>
-
-        <label>Telefone do responsável:
-          <input type="tel" name="telefone" placeholder="+55..." />
-        </label>
-
-        <label>Email:
-          <input type="email" name="email" />
-        </label>
-
-        <label>Setor da barraca:
-          <select name="setor">
-            <option value="salão">Salão</option>
-            <option value="coqueiro">Coqueiro</option>
-            <option value="guarda-sol">Guarda-sol</option>
-          </select>
-        </label>
-
-        <label>Mesa (ex: Mesa 12 / A5):
-          <input type="text" name="mesa" />
-        </label>
-
-        <label>Possui alergia?
-          <select name="temAlergia" id="temAlergia">
-            <option value="nao">Não</option>
-            <option value="sim">Sim</option>
-          </select>
-        </label>
-
-        <label id="alergiaLabel" style="display:none">Qual alergia?
-          <input type="text" name="qualAlergia" />
-        </label>
-
-        <label>Altura:
-          <select name="altura" id="alturaSelect">
-            <option value="menor">Menor que 1 metro</option>
-            <option value="maior">Maior que 1 metro</option>
-          </select>
-        </label>
-
-        <label>Sai sozinho?
-          <select name="saiSozinho" id="saiSozinhoSelect">
-            <option value="nao">Não</option>
-            <option value="sim">Sim</option>
-          </select>
-        </label>
-
-        <!-- badge que mostra cor da pulseira ao vivo -->
-        <div style="margin-top:8px">
-          <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
-        </div>
-
-        <label>Observações:
-          <textarea name="observacoes"></textarea>
-        </label>
-
-        <div class="row">
-          <button type="submit" id="btnCadastrar">Cadastrar</button>
-          <button type="button" id="btnGerarTodosQR">Gerar QR de todos</button>
+    <!-- EQUIPE -->
+    <section id="section-equipe" class="tab-section active">
+      <h2>Cadastro de Equipe</h2>
+      <form id="form-add-funcionario" class="card">
+        <label for="nome-funcionario">Nome do colaborador</label>
+        <div class="inline-form">
+          <input type="text" id="nome-funcionario" placeholder="Ex: João, Maria..." required />
+          <button type="submit">Adicionar</button>
         </div>
       </form>
 
-      <div id="resultCadastro" class="card">
-        <h3>Último QR gerado</h3>
-        <div id="qrCodeCadastro"></div>
-        <div class="row">
-          <button id="btnDownloadQR">Baixar QR</button>
-          <button id="btnPrintLabel">Imprimir etiqueta (4x4cm)</button>
-          <button id="btnPrintLabelSmall">Imprimir etiqueta pequena</button>
+      <div class="card">
+        <div class="card-header-row">
+          <h3>Lista de colaboradores</h3>
+          <span id="total-funcionarios" class="badge">0</span>
         </div>
-      </div>
-
-      <hr />
-
-      <div id="cameraControls" class="card">
-        <h3>Leitor de QR (Câmera) — Modo: BOTÃO (Opção B)</h3>
-        <div class="row">
-          <button id="btnStartCamera">Abrir câmera</button>
-          <button id="btnStopCamera" disabled>Fechar câmera</button>
-          <button id="btnScanNow" disabled>Escanear QR (ler agora)</button>
-          <button id="btnRegistrarManual">Registrar Manual</button>
-        </div>
-
-        <div id="videoWrap">
-          <video id="video" autoplay playsinline></video>
-          <canvas id="scanCanvas" hidden></canvas>
-        </div>
-        <div id="scanMessage" style="margin-top:8px"></div>
+        <ul id="lista-funcionarios" class="list"></ul>
+        <p class="tip">
+          Dica: cadastre todos os ajudantes, garçons e apoio da barraca.  
+          Depois, na aba <strong>Escala do Dia</strong>, você marca quem está presente.
+        </p>
       </div>
     </section>
 
-    <!-- BUSCA -->
-    <section id="busca" class="tab">
-      <input type="text" id="inputBusca" placeholder="Buscar por nome, telefone, mesa ou pulseira..." />
-      <ul id="listaBusca"></ul>
+    <!-- ESCALA DO DIA -->
+    <section id="section-dia" class="tab-section">
+      <h2>Escala do Dia</h2>
+
+      <div class="card">
+        <label for="data-dia">Data da escala</label>
+        <input type="date" id="data-dia" />
+      </div>
+
+      <div class="card">
+        <div class="card-header-row">
+          <h3>Quem está presente hoje?</h3>
+          <span id="total-presentes" class="badge">0</span>
+        </div>
+        <ul id="lista-presenca" class="list"></ul>
+        <p class="tip">Marque apenas quem está trabalhando nesse dia.</p>
+      </div>
+
+      <div class="actions-row">
+        <button id="btn-gerar-dia" class="primary">Gerar escala do dia</button>
+        <button id="btn-salvar-dia" class="secondary" disabled>Salvar no histórico</button>
+      </div>
+
+      <section class="card preview-card">
+        <h3>Pré-visualização (igual à impressão)</h3>
+        <div id="preview-dia" class="preview-area empty">
+          <p>Nenhuma escala gerada ainda.</p>
+        </div>
+        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir / PDF</button>
+      </section>
+    </section>
+
+    <!-- ESCALA DA SEMANA -->
+    <section id="section-semana" class="tab-section">
+      <h2>Escala da Semana</h2>
+      <div class="card">
+        <label for="data-semana">Data inicial</label>
+        <input type="date" id="data-semana" />
+        <p class="tip">O app gera 7 dias a partir dessa data.</p>
+      </div>
+
+      <div class="actions-row">
+        <button id="btn-gerar-semana" class="primary">Gerar escala da semana</button>
+      </div>
+
+      <section class="card preview-card">
+        <h3>Pré-visualização da semana</h3>
+        <div id="preview-semana" class="preview-area empty">
+          <p>Nenhuma escala semanal gerada ainda.</p>
+        </div>
+        <button id="btn-imprimir-semana" class="primary" disabled>Imprimir semana</button>
+      </section>
     </section>
 
     <!-- HISTÓRICO -->
-    <section id="historico" class="tab">
-      <h2>Histórico de Cadastros e Movimentações</h2>
-      <div id="listaHistoricoContainer"></div>
-      <div class="row">
-        <button id="btnExportJSON">Exportar JSON</button>
-        <button id="btnLimparTudo">Limpar tudo (apagar local)</button>
+    <section id="section-historico" class="tab-section">
+      <h2>Histórico de Escalas</h2>
+      <div class="card">
+        <ul id="lista-historico" class="list"></ul>
+        <p class="tip">
+          Aqui ficam as escalas salvas.  
+          Você pode reabrir para visualizar e imprimir novamente.
+        </p>
+      </div>
+      <div class="actions-row">
+        <button id="btn-apagar-historico" class="danger">Apagar todo histórico</button>
       </div>
     </section>
 
-    <!-- MARKETING -->
-    <section id="marketing" class="tab">
-      <h2>Marketing & Contatos</h2>
+    <!-- CONFIGURAÇÕES -->
+    <section id="section-config" class="tab-section">
+      <h2>Configurações</h2>
 
       <div class="card">
-        <h4>Mensagem / Promoção</h4>
-        <textarea id="marketingMessage" placeholder="Escreva a mensagem a enviar..."></textarea>
-        <label>Anexar imagem (opcional):
-          <input type="file" id="marketingImage" accept="image/*" />
-        </label>
-        <div class="row">
-          <button id="btnSelectAll">Selecionar todos</button>
-          <button id="btnClearAll">Limpar seleção</button>
-          <button id="btnSendToSelected">Enviar para selecionados</button>
+        <h3>Logo da barraca</h3>
+        <p>Escolha a imagem que vai sair no topo da impressão.</p>
+        <input type="file" id="input-logo" accept="image/*" />
+        <div class="logo-preview-wrapper">
+          <div id="logo-preview-container" class="logo-preview">
+            <p>Nenhuma logo selecionada.</p>
+          </div>
         </div>
+        <button id="btn-remover-logo" class="secondary">Remover logo</button>
       </div>
-
-      <div class="card" id="marketingListWrapper">
-        <h4>Lista de clientes (todos os cadastros)</h4>
-        <div id="marketingList"></div>
-      </div>
-    </section>
-
-    <!-- IMPRESSÃO -->
-    <section id="impressao" class="tab">
-      <h2>Impressão</h2>
 
       <div class="card">
-        <div class="row">
-          <label>Filtro rápido:
-            <select id="quickFilter">
-              <option value="hoje">Hoje</option>
-              <option value="ontem">Ontem</option>
-              <option value="ult7">Últimos 7 dias</option>
-              <option value="mesAtual">Mês atual</option>
-              <option value="intervalo">Intervalo...</option>
-            </select>
-          </label>
-          <label>Data inicial:
-            <input type="date" id="filterFrom" />
-          </label>
-          <label>Data final:
-            <input type="date" id="filterTo" />
-          </label>
-          <button id="btnFiltrar">Filtrar</button>
-          <button id="btnImprimirFiltro">Imprimir Lista de Cadastros</button>
-        </div>
+        <h3>Rodízio</h3>
+        <p>
+          O app faz rodízio automático para não repetir sempre as mesmas pessoas nas mesmas funções.
+        </p>
+        <button id="btn-reset-rodizio" class="secondary">Resetar rodízio</button>
       </div>
-
-      <div id="relatorioPreview" class="card"></div>
     </section>
   </main>
 
-  <script src="js/script.js"></script>
+  <!-- ÁREA DE IMPRESSÃO (dia ou semana) -->
+  <div id="print-area"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
