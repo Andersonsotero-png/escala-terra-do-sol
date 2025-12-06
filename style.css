@@ -1,3 +1,4 @@
+
 /* Estilo geral */
 * {
   box-sizing: border-box;
@@ -236,15 +237,6 @@ button.small {
   gap: 6px;
 }
 
-/* ---- 🔧 BOTÃO EDITAR (NOVO) ---- */
-.list-item-actions .edit {
-  background: #3b82f6;
-  color: white;
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 12px;
-}
-
 /* Tip */
 .tip {
   font-size: 12px;
@@ -274,10 +266,136 @@ button.small {
   object-fit: contain;
 }
 
-/* Impressão */
-#print-area { display: none; }
+/* Preview da escala */
+.preview-card {
+  margin-top: 8px;
+}
 
+.preview-area {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 120px;
+  border: 1px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.preview-area.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+/* Tabelas da escala */
+.escala-documento {
+  background: #ffffff;
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-size: 13px;
+  color: #111827;
+}
+
+.escala-header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.escala-header img {
+  max-width: 220px;
+  max-height: 110px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+
+.escala-header h1 {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.escala-header h2 {
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.escala-header p {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.escala-section {
+  margin-top: 10px;
+}
+
+.escala-section h3 {
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #111827;
+}
+
+.escala-section small {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.escala-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+
+.escala-table th,
+.escala-table td {
+  border: 1px solid #e5e7eb;
+  padding: 4px 6px;
+  text-align: left;
+  font-size: 12px;
+}
+
+.escala-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+/* Histórico */
+.historico-meta {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Área de impressão (fora da tela principal) */
+#print-area {
+  display: none;
+}
+
+/* Impressão */
 @media print {
-  header, nav, main { display: none !important; }
-  #print-area { display: block; }
+  body {
+    background: #ffffff;
+  }
+
+  header,
+  nav,
+  main {
+    display: none !important;
+  }
+
+  #print-area {
+    display: block;
+    padding: 0;
+    margin: 0;
+  }
+
+  #print-area .escala-documento {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
+  #print-area .escala-documento + .escala-documento {
+    page-break-before: always;
+  }
 }
