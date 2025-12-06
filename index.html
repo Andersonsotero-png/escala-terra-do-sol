@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -22,7 +21,7 @@
     <button class="tab-button active" data-target="section-equipe">Equipe</button>
     <button class="tab-button" data-target="section-dia">Escala do Dia</button>
     <button class="tab-button" data-target="section-semana">Semana</button>
-    <button class="tab-button" data-target="section-historico">Histórico</button>
+    <button class="tab-button" data-target="section-historico">Historico</button>
     <button class="tab-button" data-target="section-config">Configurações</button>
   </nav>
 
@@ -43,11 +42,11 @@
           <h3>Lista de colaboradores</h3>
           <span id="total-funcionarios" class="badge">0</span>
         </div>
+
+        <label class="tip">Quantidade máxima na escala:</label>
+        <input type="number" id="max-colaboradores" min="1" value="10">
+
         <ul id="lista-funcionarios" class="list"></ul>
-        <p class="tip">
-          Dica: cadastre todos os ajudantes, garçons e apoio da barraca.  
-          Depois, na aba <strong>Escala do Dia</strong>, você marca quem está presente.
-        </p>
       </div>
     </section>
 
@@ -66,89 +65,41 @@
           <span id="total-presentes" class="badge">0</span>
         </div>
         <ul id="lista-presenca" class="list"></ul>
-        <p class="tip">Marque apenas quem está trabalhando nesse dia.</p>
       </div>
 
       <div class="actions-row">
-        <button id="btn-gerar-dia" class="primary">Gerar escala do dia</button>
-        <button id="btn-salvar-dia" class="secondary" disabled>Salvar no histórico</button>
+        <button id="btn-gerar-dia" class="primary">Gerar</button>
+        <button id="btn-salvar-dia" class="secondary" disabled>Salvar</button>
       </div>
 
       <section class="card preview-card">
-        <h3>Pré-visualização (igual à impressão)</h3>
+        <h3>Pré-visualização</h3>
         <div id="preview-dia" class="preview-area empty">
           <p>Nenhuma escala gerada ainda.</p>
         </div>
-        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir / PDF</button>
+        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir</button>
       </section>
     </section>
 
-    <!-- ESCALA DA SEMANA -->
-    <section id="section-semana" class="tab-section">
-      <h2>Escala da Semana</h2>
-      <div class="card">
-        <label for="data-semana">Data inicial</label>
-        <input type="date" id="data-semana" />
-        <p class="tip">O app gera 7 dias a partir dessa data.</p>
-      </div>
-
-      <div class="actions-row">
-        <button id="btn-gerar-semana" class="primary">Gerar escala da semana</button>
-      </div>
-
-      <section class="card preview-card">
-        <h3>Pré-visualização da semana</h3>
-        <div id="preview-semana" class="preview-area empty">
-          <p>Nenhuma escala semanal gerada ainda.</p>
-        </div>
-        <button id="btn-imprimir-semana" class="primary" disabled>Imprimir semana</button>
-      </section>
-    </section>
-
-    <!-- HISTÓRICO -->
+    <!-- HISTORICO -->
     <section id="section-historico" class="tab-section">
-      <h2>Histórico de Escalas</h2>
-      <div class="card">
-        <ul id="lista-historico" class="list"></ul>
-        <p class="tip">
-          Aqui ficam as escalas salvas.  
-          Você pode reabrir para visualizar e imprimir novamente.
-        </p>
-      </div>
-      <div class="actions-row">
-        <button id="btn-apagar-historico" class="danger">Apagar todo histórico</button>
-      </div>
+      <h2>Histórico</h2>
+      <ul id="lista-historico" class="list card"></ul>
+      <button id="btn-apagar-historico" class="danger">Apagar tudo</button>
     </section>
 
-    <!-- CONFIGURAÇÕES -->
+    <!-- CONFIG -->
     <section id="section-config" class="tab-section">
       <h2>Configurações</h2>
-
-      <div class="card">
-        <h3>Logo da barraca</h3>
-        <p>Escolha a imagem que vai sair no topo da impressão.</p>
-        <input type="file" id="input-logo" accept="image/*" />
-        <div class="logo-preview-wrapper">
-          <div id="logo-preview-container" class="logo-preview">
-            <p>Nenhuma logo selecionada.</p>
-          </div>
-        </div>
-        <button id="btn-remover-logo" class="secondary">Remover logo</button>
-      </div>
-
-      <div class="card">
-        <h3>Rodízio</h3>
-        <p>
-          O app faz rodízio automático para não repetir sempre as mesmas pessoas nas mesmas funções.
-        </p>
-        <button id="btn-reset-rodizio" class="secondary">Resetar rodízio</button>
-      </div>
+      <p>Logo para impressão:</p>
+      <input type="file" id="input-logo" accept="image/*" />
+      <div id="logo-preview-container" class="logo-preview-card"></div>
+      <button id="btn-remover-logo" class="danger small">Remover logo</button>
     </section>
   </main>
 
-  <!-- ÁREA DE IMPRESSÃO (dia ou semana) -->
   <div id="print-area"></div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=2"></script>
 </body>
 </html>
