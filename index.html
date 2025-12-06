@@ -42,64 +42,11 @@
           <h3>Lista de colaboradores</h3>
           <span id="total-funcionarios" class="badge">0</span>
         </div>
-
-        <label class="tip">Quantidade máxima na escala:</label>
-        <input type="number" id="max-colaboradores" min="1" value="10">
-
         <ul id="lista-funcionarios" class="list"></ul>
       </div>
     </section>
-
-    <!-- ESCALA DO DIA -->
-    <section id="section-dia" class="tab-section">
-      <h2>Escala do Dia</h2>
-
-      <div class="card">
-        <label for="data-dia">Data da escala</label>
-        <input type="date" id="data-dia" />
-      </div>
-
-      <div class="card">
-        <div class="card-header-row">
-          <h3>Quem está presente hoje?</h3>
-          <span id="total-presentes" class="badge">0</span>
-        </div>
-        <ul id="lista-presenca" class="list"></ul>
-      </div>
-
-      <div class="actions-row">
-        <button id="btn-gerar-dia" class="primary">Gerar</button>
-        <button id="btn-salvar-dia" class="secondary" disabled>Salvar</button>
-      </div>
-
-      <section class="card preview-card">
-        <h3>Pré-visualização</h3>
-        <div id="preview-dia" class="preview-area empty">
-          <p>Nenhuma escala gerada ainda.</p>
-        </div>
-        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir</button>
-      </section>
-    </section>
-
-    <!-- HISTORICO -->
-    <section id="section-historico" class="tab-section">
-      <h2>Histórico</h2>
-      <ul id="lista-historico" class="list card"></ul>
-      <button id="btn-apagar-historico" class="danger">Apagar tudo</button>
-    </section>
-
-    <!-- CONFIG -->
-    <section id="section-config" class="tab-section">
-      <h2>Configurações</h2>
-      <p>Logo para impressão:</p>
-      <input type="file" id="input-logo" accept="image/*" />
-      <div id="logo-preview-container" class="logo-preview-card"></div>
-      <button id="btn-remover-logo" class="danger small">Remover logo</button>
-    </section>
   </main>
 
-  <div id="print-area"></div>
-
-  <script src="script.js?v=2"></script>
+  <script src="script.js"></script>
 </body>
 </html>
