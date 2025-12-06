@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Escala Terra do Sol</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <header class="app-header">
@@ -21,7 +21,7 @@
     <button class="tab-button active" data-target="section-equipe">Equipe</button>
     <button class="tab-button" data-target="section-dia">Escala do Dia</button>
     <button class="tab-button" data-target="section-semana">Semana</button>
-    <button class="tab-button" data-target="section-historico">Historico</button>
+    <button class="tab-button" data-target="section-historico">Histórico</button>
     <button class="tab-button" data-target="section-config">Configurações</button>
   </nav>
 
@@ -45,8 +45,59 @@
         <ul id="lista-funcionarios" class="list"></ul>
       </div>
     </section>
+
+    <!-- ESCALA DO DIA -->
+    <section id="section-dia" class="tab-section">
+      <h2>Escala do Dia</h2>
+
+      <div class="card">
+        <label for="data-dia">Data da escala</label>
+        <input type="date" id="data-dia" />
+      </div>
+
+      <div class="card">
+        <div class="card-header-row">
+          <h3>Quem está presente hoje?</h3>
+          <span id="total-presentes" class="badge">0</span>
+        </div>
+        <ul id="lista-presenca" class="list"></ul>
+      </div>
+
+      <div class="actions-row">
+        <button id="btn-gerar-dia" class="primary">Gerar escala do dia</button>
+        <button id="btn-salvar-dia" class="secondary" disabled>Salvar</button>
+      </div>
+
+      <section class="card preview-card">
+        <h3>Pré-visualização</h3>
+        <div id="preview-dia" class="preview-area empty">
+          <p>Nenhuma escala gerada ainda.</p>
+        </div>
+        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir / PDF</button>
+      </section>
+    </section>
+
+    <!-- HISTORICO -->
+    <section id="section-historico" class="tab-section">
+      <h2>Histórico</h2>
+      <ul id="lista-historico" class="list"></ul>
+      <button id="btn-apagar-historico" class="danger">Limpar tudo</button>
+    </section>
+
+    <!-- CONFIG -->
+    <section id="section-config" class="tab-section">
+      <h2>Configurações</h2>
+
+      <div class="card">
+        <h3>Logo</h3>
+        <input type="file" id="input-logo" accept="image/*" />
+        <div id="logo-preview-container" class="logo-preview"></div>
+        <button id="btn-remover-logo" class="secondary">Remover logo</button>
+      </div>
+    </section>
   </main>
 
-  <script src="script.js"></script>
+  <div id="print-area"></div>
+  <script src="./script.js"></script>
 </body>
 </html>
