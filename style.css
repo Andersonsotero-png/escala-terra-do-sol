@@ -1,401 +1,252 @@
-
-/* Estilo geral */
+/* =========================================
+   RESET
+========================================= */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
-  background: #f3f4f6;
-  color: #111827;
-  min-height: 100vh;
+  background: #f2f2f2;
+  color: #333;
+  padding-bottom: 40px;
 }
 
-/* Cabeçalho */
+/* =========================================
+   HEADER
+========================================= */
 .app-header {
+  background: #ffd45c;
+  padding: 15px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #f97316, #fbbf24);
-  color: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  gap: 15px;
+  border-bottom: 2px solid #e9b800;
 }
 
-.logo-mini {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
+.logo-mini span {
+  font-size: 40px;
 }
 
 .title-group h1 {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  margin-bottom: 2px;
 }
 
 .title-group p {
-  font-size: 13px;
-  opacity: 0.9;
+  font-size: 14px;
+  opacity: 0.8;
 }
 
-/* Tabs */
+/* =========================================
+   TABS
+========================================= */
 .tabs {
   display: flex;
   overflow-x: auto;
   background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-button {
-  flex: 1;
-  padding: 10px 6px;
+  padding: 12px 16px;
   border: none;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  border-bottom: 3px solid transparent;
+  background: none;
+  font-size: 14px;
   cursor: pointer;
+  border-bottom: 3px solid transparent;
 }
 
 .tab-button.active {
-  color: #ea580c;
-  border-color: #ea580c;
-  background: #fff7ed;
+  border-color: #ffa600;
+  font-weight: bold;
 }
 
-/* Layout principal */
+/* =========================================
+   SECTIONS
+========================================= */
 main {
-  padding: 12px;
-  max-width: 900px;
-  margin: 0 auto 48px auto;
-}
-
-h2 {
-  font-size: 18px;
-  margin-bottom: 8px;
-}
-
-h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
+  padding: 15px;
 }
 
 .tab-section {
   display: none;
-  margin-top: 10px;
 }
 
 .tab-section.active {
   display: block;
 }
 
-/* Cards */
+/* =========================================
+   CARDS
+========================================= */
 .card {
   background: #fff;
+  padding: 15px;
   border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+  margin-bottom: 15px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
 
 .card-header-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
 }
 
 .badge {
-  background: #fee2e2;
-  color: #b91c1c;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 12px;
+  background: #ffa600;
+  color: #000;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: bold;
 }
 
-/* Formulários */
-label {
-  font-size: 13px;
-  margin-bottom: 4px;
-  display: block;
-  font-weight: 600;
-  color: #374151;
-}
-
-input[type="text"],
-input[type="date"] {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  font-size: 14px;
-  outline: none;
-}
-
-input[type="text"]:focus,
-input[type="date"]:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 1px rgba(249,115,22,0.3);
-}
-
+/* =========================================
+   FORMULÁRIOS
+========================================= */
 .inline-form {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
 }
 
-.inline-form input {
+input[type="text"],
+input[type="date"],
+select {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
   flex: 1;
 }
 
-/* Botões */
 button {
-  border-radius: 999px;
-  padding: 8px 14px;
+  padding: 10px 15px;
+  border-radius: 6px;
   border: none;
-  font-size: 13px;
-  font-weight: 600;
   cursor: pointer;
 }
 
 button.primary {
-  background: #f97316;
-  color: #fff;
-}
-
-button.primary:disabled {
-  background: #fbbf24;
-  opacity: 0.7;
-  cursor: not-allowed;
+  background: #ffa600;
+  color: #000;
+  font-weight: bold;
 }
 
 button.secondary {
-  background: #e5e7eb;
-  color: #111827;
+  background: #ddd;
 }
 
 button.danger {
-  background: #ef4444;
+  background: #ff5050;
   color: #fff;
 }
 
-button.small {
-  font-size: 11px;
-  padding: 4px 10px;
-}
-
-.actions-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-/* Listas */
+/* =========================================
+   LISTAS
+========================================= */
 .list {
   list-style: none;
-}
-
-.list-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.list-item-row:last-child {
-  border-bottom: none;
-}
-
-.list-item-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.list-item-main span.nome {
-  font-size: 14px;
-}
-
-.list-item-main small {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.list-item-actions {
-  display: flex;
-  gap: 6px;
-}
-
-/* Tip */
-.tip {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-/* Logo preview */
-.logo-preview-wrapper {
-  margin-top: 8px;
-}
-
-.logo-preview {
-  width: 100%;
-  min-height: 80px;
-  border-radius: 8px;
-  border: 1px dashed #d1d5db;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-}
-
-.logo-preview img {
-  max-width: 260px;
-  max-height: 120px;
-  object-fit: contain;
-}
-
-/* Preview da escala */
-.preview-card {
-  margin-top: 8px;
-}
-
-.preview-area {
-  background: #f9fafb;
-  border-radius: 10px;
-  padding: 10px;
-  min-height: 120px;
-  border: 1px solid #e5e7eb;
-  overflow-x: auto;
-}
-
-.preview-area.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-}
-
-/* Tabelas da escala */
-.escala-documento {
-  background: #ffffff;
-  max-width: 800px;
-  margin: 0 auto;
-  border-radius: 10px;
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  font-size: 13px;
-  color: #111827;
-}
-
-.escala-header {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.escala-header img {
-  max-width: 220px;
-  max-height: 110px;
-  object-fit: contain;
-  margin-bottom: 4px;
-}
-
-.escala-header h1 {
-  font-size: 18px;
-  margin-bottom: 2px;
-}
-
-.escala-header h2 {
-  font-size: 15px;
-  margin-bottom: 2px;
-}
-
-.escala-header p {
-  font-size: 12px;
-  color: #4b5563;
-}
-
-.escala-section {
   margin-top: 10px;
 }
 
-.escala-section h3 {
-  font-size: 14px;
-  margin-bottom: 4px;
-  color: #111827;
+.list li {
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.escala-section small {
-  font-size: 11px;
-  color: #6b7280;
+.delete-btn {
+  background: #ff5050;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.escala-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 4px;
+/* =========================================
+   PREVIEW
+========================================= */
+.preview-card {
+  margin-top: 20px;
 }
 
-.escala-table th,
-.escala-table td {
-  border: 1px solid #e5e7eb;
-  padding: 4px 6px;
-  text-align: left;
-  font-size: 12px;
+.preview-area {
+  padding: 20px;
+  background: #fff;
+  min-height: 100px;
 }
 
-.escala-table th {
-  background: #f3f4f6;
-  font-weight: 600;
+.preview-area.empty {
+  opacity: 0.5;
+  text-align: center;
 }
 
-/* Histórico */
-.historico-meta {
-  font-size: 11px;
-  color: #6b7280;
+.print-logo {
+  max-width: 150px;
+  display: block;
+  margin-bottom: 10px;
 }
 
-/* Área de impressão (fora da tela principal) */
+/* =========================================
+   PRINT AREA
+========================================= */
 #print-area {
   display: none;
 }
 
-/* Impressão */
+/* =========================================
+   RESPONSIVO
+========================================= */
+@media (max-width: 480px) {
+  .inline-form {
+    flex-direction: column;
+  }
+}
+
+/* =========================================
+   IMPRESSÃO — LOGO CORRIGIDA
+========================================= */
 @media print {
-  body {
-    background: #ffffff;
+  /* Área de impressão sempre visível */
+  #print-area {
+    display: block !important;
   }
 
-  header,
-  nav,
-  main {
-    display: none !important;
+  /* Corrige a visualização da logo */
+  .print-logo,
+  #logo-preview-container img,
+  #logoPreview,
+  #logoPreview img {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-width: 180px !important;
+  }
+
+  /* Remove elementos da tela que não devem sair */
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area, #print-area * {
+    visibility: visible;
   }
 
   #print-area {
-    display: block;
-    padding: 0;
-    margin: 0;
-  }
-
-  #print-area .escala-documento {
-    box-shadow: none;
-    border-radius: 0;
-    max-width: 100%;
-  }
-
-  #print-area .escala-documento + .escala-documento {
-    page-break-before: always;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
   }
 }
