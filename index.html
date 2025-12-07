@@ -43,6 +43,10 @@
           <span id="total-funcionarios" class="badge">0</span>
         </div>
         <ul id="lista-funcionarios" class="list"></ul>
+        <p class="tip">
+          Dica: cadastre todos os ajudantes, garçons e apoio da barraca.  
+          Depois, na aba <strong>Escala do Dia</strong>, você marca quem está presente.
+        </p>
       </div>
     </section>
 
@@ -60,15 +64,12 @@
           <h3>Quem está presente hoje?</h3>
           <span id="total-presentes" class="badge">0</span>
         </div>
-
-        <button id="btn-marcar-todos" class="secondary">Marcar todos</button>
-
         <ul id="lista-presenca" class="list"></ul>
+        <p class="tip">Marque apenas quem está trabalhando nesse dia.</p>
       </div>
 
       <div class="actions-row">
         <button id="btn-gerar-dia" class="primary">Gerar escala do dia</button>
-        <button id="btn-excel-dia" class="secondary">Exportar Excel</button>
         <button id="btn-salvar-dia" class="secondary" disabled>Salvar no histórico</button>
       </div>
 
@@ -77,9 +78,7 @@
         <div id="preview-dia" class="preview-area empty">
           <p>Nenhuma escala gerada ainda.</p>
         </div>
-
         <button id="btn-imprimir-dia" class="primary" disabled>Imprimir / PDF</button>
-        <button id="btn-excel-preview" class="secondary" disabled>Exportar Excel</button>
       </section>
     </section>
 
@@ -110,6 +109,10 @@
       <h2>Histórico de Escalas</h2>
       <div class="card">
         <ul id="lista-historico" class="list"></ul>
+        <p class="tip">
+          Aqui ficam as escalas salvas.  
+          Você pode reabrir para visualizar e imprimir novamente.
+        </p>
       </div>
       <div class="actions-row">
         <button id="btn-apagar-historico" class="danger">Apagar todo histórico</button>
@@ -122,7 +125,7 @@
 
       <div class="card">
         <h3>Logo da barraca</h3>
-        <p>Escolha a imagem que vai sair na impressão.</p>
+        <p>Escolha a imagem que vai sair no topo da impressão.</p>
         <input type="file" id="input-logo" accept="image/*" />
         <div class="logo-preview-wrapper">
           <div id="logo-preview-container" class="logo-preview">
@@ -134,12 +137,15 @@
 
       <div class="card">
         <h3>Rodízio</h3>
-        <p>O app faz rodízio automático para não repetir sempre as mesmas pessoas nas mesmas funções.</p>
+        <p>
+          O app faz rodízio automático para não repetir sempre as mesmas pessoas nas mesmas funções.
+        </p>
         <button id="btn-reset-rodizio" class="secondary">Resetar rodízio</button>
       </div>
     </section>
   </main>
 
+  <!-- ÁREA DE IMPRESSÃO (dia ou semana) -->
   <div id="print-area"></div>
 
   <script src="script.js"></script>
