@@ -1,161 +1,201 @@
-// script.js — versão final unificada (substitua todo o seu script.js por este)
+// -----------------------------
+// utilitários de data
+// -----------------------------
+function formatDateISO(date) {
+  return date.toISOString().slice(0, 10);
+}
+function parseDateInput(value) {
+  if (!value) return new Date();
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function formatDateBR(dateStr) {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dia = String(d).padStart(2, "0");
+  const mes = String(m).padStart(2, "0");
+  return `${dia}/${mes}/${y}`;
+}
+function weekdayName(dateStr) {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const dias = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+  return dias[date.getDay()];
+}
 
-// -------------------- utilitários --------------------
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const todayISO = d => (d || new Date()).toISOString().slice(0,10);
-function formatDateBR(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return `${d.padStart(2,"0")}/${m.padStart(2,"0")}/${y}`; }
-function weekdayName(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-").map(Number); return ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][new Date(y,m-1,d).getDay()]; }
-function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-
-// -------------------- storage keys --------------------
-const SK = {
-  FUNC: "tds_escala_funcionarios",
+// -----------------------------
+// storage keys
+// -----------------------------
+const STORAGE_KEYS = {
+  FUNCIONARIOS: "tds_escala_funcionarios",
   LOGO: "tds_escala_logo",
-  ROD: "tds_escala_rodizio_offset",
-  HIST: "tds_escala_historico",
-  ASSIGN: "tds_escala_assignments"
+  RODIZIO_OFFSET: "tds_escala_rodizio_offset",
+  HISTORICO: "tds_escala_historico",
+  ASSIGNMENTS: "tds_escala_assignments"
 };
 
-function loadJSON(k, fallback){ try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : fallback; } catch(e){ return fallback; } }
-function saveJSON(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.error(e); } }
-function loadRaw(k){ return localStorage.getItem(k); }
-function saveRaw(k,v){ try { if(v===null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch(e){} }
-
-// -------------------- estado --------------------
-let funcionarios = loadJSON(SK.FUNC, []);
-// normalize older array-of-strings -> object form
-if (Array.isArray(funcionarios) && funcionarios.length && typeof funcionarios[0] === "string"){
-  funcionarios = funcionarios.map(name => ({ id: uid(), nome: name }));
-  saveJSON(SK.FUNC, funcionarios);
+function loadJSON(key, fallback) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return fallback;
+  try { return JSON.parse(raw); } catch { return fallback; }
 }
-let rodizioOffset = Number(loadRaw(SK.ROD) || 0);
-let historico = loadJSON(SK.HIST, {});
-let assignments = loadJSON(SK.ASSIGN, {}); // custom manual assignments
+function saveJSON(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+// -----------------------------
+// estado em memória
+// -----------------------------
+let funcionarios = loadJSON(STORAGE_KEYS.FUNCIONARIOS, []); // array de {id, nome}
+let rodizioOffset = parseInt(localStorage.getItem(STORAGE_KEYS.RODIZIO_OFFSET) || "0", 10);
+let assignments = loadJSON(STORAGE_KEYS.ASSIGNMENTS, {}); // manual assignments
 let ultimoResultadoDia = null;
 let ultimoResultadoSemana = null;
 
-// -------------------- tabs (fix) --------------------
-$$(".tab-button").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    $$(".tab-button").forEach(b=>b.classList.remove("active"));
-    $$(".tab-section").forEach(s=>s.classList.remove("active"));
+// -----------------------------
+// TABS (corrigido)
+// -----------------------------
+document.querySelectorAll(".tab-button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-button").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".tab-section").forEach((s) => s.classList.remove("active"));
     btn.classList.add("active");
-    const tgt = btn.getAttribute("data-target");
-    const sec = document.getElementById(tgt);
-    if(sec) sec.classList.add("active");
+    const alvo = btn.dataset.target;
+    const sec = document.getElementById(alvo);
+    if (sec) sec.classList.add("active");
   });
 });
 
-// -------------------- elementos uteis --------------------
-const els = {
-  // equipe
-  formAdd: $("#form-add-funcionario"),
-  inputNome: $("#nome-funcionario"),
-  listaFuncionarios: $("#lista-funcionarios"),
-  totalFuncionarios: $("#total-funcionarios"),
-  // dia
-  dataDia: $("#data-dia"),
-  listaPresenca: $("#lista-presenca"),
-  totalPresentes: $("#total-presentes"),
-  btnGerarDia: $("#btn-gerar-dia"),
-  btnSalvarDia: $("#btn-salvar-dia"),
-  btnImprimirDia: $("#btn-imprimir-dia"),
-  previewDia: $("#preview-dia"),
-  printArea: $("#print-area"),
-  // semana
-  dataSemana: $("#data-semana"),
-  btnGerarSemana: $("#btn-gerar-semana"),
-  previewSemana: $("#preview-semana"),
-  btnImprimirSemana: $("#btn-imprimir-semana"),
-  // historico
-  listaHistorico: $("#lista-historico"),
-  btnApagarHistorico: $("#btn-apagar-historico"),
-  // config
-  inputLogo: $("#input-logo"),
-  logoPreviewContainer: $("#logo-preview-container"),
-  btnRemoverLogo: $("#btn-remover-logo"),
-  btnResetRodizio: $("#btn-reset-rodizio")
-};
+// -----------------------------
+// EQUIPE (manter ordem de cadastro)
+// -----------------------------
+const formAddFuncionario = document.getElementById("form-add-funcionario");
+const inputNomeFuncionario = document.getElementById("nome-funcionario");
+const listaFuncionariosEl = document.getElementById("lista-funcionarios");
+const totalFuncionariosEl = document.getElementById("total-funcionarios");
 
-// -------------------- funções de storage --------------------
-function saveFuncionarios(){ saveJSON(SK.FUNC, funcionarios); }
-function saveRodizio(){ saveRaw(SK.ROD, String(rodizioOffset)); }
-function saveHistorico(){ saveJSON(SK.HIST, historico); }
-function saveAssignments(){ saveJSON(SK.ASSIGN, assignments); }
-function loadLogo(){ return loadRaw(SK.LOGO); }
-function saveLogo(dataUrl){ saveRaw(SK.LOGO, dataUrl); }
+formAddFuncionario.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nome = inputNomeFuncionario.value.trim();
+  if (!nome) return;
+  const novo = { id: Date.now(), nome };
+  funcionarios.push(novo);
+  saveJSON(STORAGE_KEYS.FUNCIONARIOS, funcionarios);
+  inputNomeFuncionario.value = "";
+  renderFuncionarios();
+  renderListaPresenca();
+  renderFuncoesUI();
+});
 
-// -------------------- render funcionários --------------------
-function renderFuncionarios(){
-  const ul = els.listaFuncionarios;
-  if(!ul) return;
-  ul.innerHTML = "";
-  if(!funcionarios.length){
-    ul.innerHTML = "<li>Nenhum colaborador cadastrado ainda.</li>";
-  } else {
-    funcionarios.slice().sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR")).forEach(f=>{
-      const li = document.createElement("li");
-      li.className = "list-item-row";
-      li.innerHTML = `
-        <div class="list-item-main">
-          <span class="nome">${f.nome}</span>
-          <small>ID: ${f.id}</small>
-        </div>
-        <div class="list-item-actions">
-          <button class="danger small btn-remove" data-id="${f.id}">Remover</button>
-        </div>
-      `;
-      ul.appendChild(li);
-      li.querySelector(".btn-remove").addEventListener("click", ()=>{
-        if(confirm(`Remover ${f.nome} da equipe?`)){
-          funcionarios = funcionarios.filter(x => x.id !== f.id);
-          saveFuncionarios(); renderFuncionarios(); renderListaPresenca(); renderFuncoesUI(); renderHistorico();
-        }
-      });
-    });
-  }
-  if(els.totalFuncionarios) els.totalFuncionarios.textContent = String(funcionarios.length);
+function removerFuncionario(id) {
+  if (!confirm("Remover este colaborador?")) return;
+  funcionarios = funcionarios.filter(f => f.id !== id);
+  saveJSON(STORAGE_KEYS.FUNCIONARIOS, funcionarios);
+  renderFuncionarios();
+  renderListaPresenca();
+  renderFuncoesUI();
 }
 
-// -------------------- presença (com toolbar marcar/desmarcar) --------------------
-function renderListaPresenca(){
-  const ul = els.listaPresenca;
-  if(!ul) return;
-  ul.innerHTML = "";
+function renderFuncionarios() {
+  if (!listaFuncionariosEl) return;
+  listaFuncionariosEl.innerHTML = "";
+  if (!funcionarios || funcionarios.length === 0) {
+    listaFuncionariosEl.innerHTML = "<li>Nenhum colaborador cadastrado ainda.</li>";
+  } else {
+    // ** NÃO ordenar — preservar ordem de cadastro **
+    funcionarios.forEach((f) => {
+      const li = document.createElement("li");
+      li.className = "list-item-row";
+      const main = document.createElement("div");
+      main.className = "list-item-main";
+      const spanNome = document.createElement("span");
+      spanNome.className = "nome";
+      spanNome.textContent = f.nome;
+      const small = document.createElement("small");
+      small.textContent = "ID: " + f.id;
+      main.appendChild(spanNome);
+      main.appendChild(small);
+      const actions = document.createElement("div");
+      actions.className = "list-item-actions";
+      const btnDel = document.createElement("button");
+      btnDel.className = "danger small";
+      btnDel.textContent = "Remover";
+      btnDel.addEventListener("click", () => removerFuncionario(f.id));
+      actions.appendChild(btnDel);
+      li.appendChild(main);
+      li.appendChild(actions);
+      listaFuncionariosEl.appendChild(li);
+    });
+  }
+  totalFuncionariosEl.textContent = (funcionarios ? funcionarios.length : 0).toString();
+}
 
-  // toolbar
-  const toolbarLi = document.createElement("li");
-  toolbarLi.style.listStyle = "none";
-  const toolbar = document.createElement("div");
-  toolbar.className = "presence-toolbar";
-  toolbar.style.display = "flex";
-  toolbar.style.gap = "8px";
-  toolbar.style.marginBottom = "6px";
+// -----------------------------
+// PRESENÇA DO DIA (com toolbar Marcar/Desmarcar único)
+// -----------------------------
+const dataDiaInput = document.getElementById("data-dia");
+const listaPresencaEl = document.getElementById("lista-presenca");
+const totalPresentesEl = document.getElementById("total-presentes");
+
+function initDataInputs() {
+  const hoje = new Date();
+  const iso = formatDateISO(hoje);
+  if (dataDiaInput && !dataDiaInput.value) dataDiaInput.value = iso;
+  const dataSemanaInput = document.getElementById("data-semana");
+  if (dataSemanaInput && !dataSemanaInput.value) dataSemanaInput.value = iso;
+}
+
+function ensurePresenceToolbar() {
+  if (!listaPresencaEl) return;
+  // Se já existe toolbar (primeiro li com .presence-toolbar) não cria outra
+  const existing = listaPresencaEl.querySelector(".presence-toolbar");
+  if (existing) return;
+  const toolbarDiv = document.createElement("div");
+  toolbarDiv.className = "presence-toolbar";
+  toolbarDiv.style.display = "flex";
+  toolbarDiv.style.gap = "8px";
+  toolbarDiv.style.marginBottom = "8px";
 
   const btnMarkAll = document.createElement("button");
   btnMarkAll.className = "small secondary";
   btnMarkAll.textContent = "Marcar todos";
-  btnMarkAll.onclick = ()=>{ ul.querySelectorAll("input[type='checkbox']").forEach(c=>c.checked=true); atualizarTotalPresentes(); };
+  btnMarkAll.addEventListener("click", () => {
+    listaPresencaEl.querySelectorAll("input[type='checkbox']").forEach(c => c.checked = true);
+    atualizarTotalPresentes();
+  });
 
   const btnUnmarkAll = document.createElement("button");
   btnUnmarkAll.className = "small secondary";
   btnUnmarkAll.textContent = "Desmarcar todos";
-  btnUnmarkAll.onclick = ()=>{ ul.querySelectorAll("input[type='checkbox']").forEach(c=>c.checked=false); atualizarTotalPresentes(); };
+  btnUnmarkAll.addEventListener("click", () => {
+    listaPresencaEl.querySelectorAll("input[type='checkbox']").forEach(c => c.checked = false);
+    atualizarTotalPresentes();
+  });
 
-  toolbar.appendChild(btnMarkAll); toolbar.appendChild(btnUnmarkAll);
-  toolbarLi.appendChild(toolbar);
-  ul.appendChild(toolbarLi);
+  toolbarDiv.appendChild(btnMarkAll);
+  toolbarDiv.appendChild(btnUnmarkAll);
 
-  if(!funcionarios.length){
+  const wrapperLi = document.createElement("li");
+  wrapperLi.appendChild(toolbarDiv);
+  listaPresencaEl.insertBefore(wrapperLi, listaPresencaEl.firstChild);
+}
+
+function renderListaPresenca() {
+  if (!listaPresencaEl) return;
+  listaPresencaEl.innerHTML = "";
+  ensurePresenceToolbar();
+
+  if (!funcionarios || funcionarios.length === 0) {
     const li = document.createElement("li");
     li.innerHTML = "<em>Cadastre colaboradores na aba <strong>Equipe</strong>.</em>";
-    ul.appendChild(li);
-    if(els.totalPresentes) els.totalPresentes.textContent = "0";
+    listaPresencaEl.appendChild(li);
+    if (totalPresentesEl) totalPresentesEl.textContent = "0";
     return;
   }
 
-  funcionarios.slice().sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR")).forEach(f=>{
+  // sem ordenar: manter ordem de cadastro
+  funcionarios.forEach((f) => {
     const li = document.createElement("li");
     li.className = "list-item-row";
     const main = document.createElement("div");
@@ -164,332 +204,170 @@ function renderListaPresenca(){
     chk.type = "checkbox";
     chk.dataset.id = f.id;
     chk.id = `presenca_${f.id}`;
-    const span = document.createElement("span");
-    span.className = "nome";
-    span.textContent = f.nome;
-    main.appendChild(chk); main.appendChild(span);
+    const spanNome = document.createElement("span");
+    spanNome.className = "nome";
+    spanNome.textContent = f.nome;
+    main.appendChild(chk);
+    main.appendChild(spanNome);
     li.appendChild(main);
-    ul.appendChild(li);
+    listaPresencaEl.appendChild(li);
   });
 
   atualizarTotalPresentes();
 }
 
-function atualizarTotalPresentes(){
-  if(!els.totalPresentes) return;
-  const checks = (els.listaPresenca ? els.listaPresenca.querySelectorAll("input[type='checkbox']") : []);
-  let n=0; checks.forEach(c=>{ if(c.checked) n++ });
-  els.totalPresentes.textContent = String(n);
-}
-
-if(els.listaPresenca) els.listaPresenca.addEventListener("change", atualizarTotalPresentes);
-
-function getPresentesDoDia(){
-  if(!els.listaPresenca) return [];
-  const checks = els.listaPresenca.querySelectorAll("input[type='checkbox']");
+function getPresentesDoDia() {
+  if (!listaPresencaEl) return [];
+  const checks = listaPresencaEl.querySelectorAll("input[type='checkbox']");
   const presentes = [];
-  checks.forEach(chk=>{
-    if(chk.checked){
-      const id = String(chk.dataset.id);
-      const f = funcionarios.find(x => String(x.id) === id);
-      if(f) presentes.push(f);
+  checks.forEach((chk) => {
+    if (chk.checked) {
+      const id = Number(chk.dataset.id);
+      const f = funcionarios.find((x) => x.id === id);
+      if (f) presentes.push(f);
     }
   });
   return presentes;
 }
 
-// -------------------- funções UI (seleção por role) --------------------
-function ensureFuncoesContainer(){
-  const sectionDia = document.getElementById("section-dia");
-  if(!sectionDia) return;
-  let card = sectionDia.querySelector("#card-funcoes");
-  if(!card){
-    card = document.createElement("section");
-    card.id = "card-funcoes";
-    card.className = "card";
-    const previewCard = sectionDia.querySelector(".preview-card");
-    if(previewCard && previewCard.parentNode) previewCard.parentNode.insertBefore(card, previewCard);
-    else sectionDia.appendChild(card);
-  }
-  card.innerHTML = "<h3>Funções & Atribuições (defina quantidade e selecione)</h3><div id='funcoes-list'></div>";
-  renderFuncoesUI();
-}
-
-function renderFuncoesUI(){
-  const container = document.getElementById("funcoes-list");
-  if(!container) return;
-  container.innerHTML = "";
-
-  // BAR (2)
-  const barRow = document.createElement("div");
-  barRow.className = "func-row";
-  barRow.style.display="flex"; barRow.style.justifyContent="space-between"; barRow.style.marginBottom="8px";
-  barRow.innerHTML = `<div><strong>Bar</strong> <small>(2 posições)</small></div>`;
-  const barActions = document.createElement("div");
-  const btnSelBar = document.createElement("button"); btnSelBar.className="small secondary"; btnSelBar.textContent="Selecionar";
-  btnSelBar.onclick = ()=> openSelectionModal("bar",2,"Selecione até 2 pessoas para o Bar");
-  barActions.appendChild(btnSelBar);
-  const spanBar = document.createElement("div"); spanBar.id="sel-bar"; spanBar.style.marginLeft="8px";
-  barActions.appendChild(spanBar);
-  barRow.appendChild(barActions);
-  container.appendChild(barRow);
-
-  // APARADORES (3)
-  const apaRow = document.createElement("div");
-  apaRow.className="func-row"; apaRow.style.display="flex"; apaRow.style.justifyContent="space-between"; apaRow.style.marginBottom="8px";
-  apaRow.innerHTML = `<div><strong>Aparadores</strong> <small>(3 posições)</small></div>`;
-  const apaActions = document.createElement("div");
-  const btnSelApa = document.createElement("button"); btnSelApa.className="small secondary"; btnSelApa.textContent="Selecionar";
-  btnSelApa.onclick = ()=> openSelectionModal("aparadores",3,"Selecione até 3 aparadores");
-  apaActions.appendChild(btnSelApa);
-  const spanApa = document.createElement("div"); spanApa.id="sel-aparadores"; spanApa.style.marginLeft="8px";
-  apaActions.appendChild(spanApa);
-  apaRow.appendChild(apaActions);
-  container.appendChild(apaRow);
-
-  // ALMOÇO (2 turmas)
-  const almRow = document.createElement("div"); almRow.className="func-row"; almRow.style.display="block"; almRow.style.marginBottom="8px";
-  almRow.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><div><strong>Almoço</strong> <small>(defina manualmente por turma)</small></div><div><button class="small secondary" id="btn-sel-almoco">Selecionar turmas</button></div></div><div style="margin-top:6px"><small id="sel-almoco" style="color:#374151"></small></div>`;
-  container.appendChild(almRow);
-  document.getElementById("btn-sel-almoco").addEventListener("click", ()=> openMultiGroupModal("almoco",2,["turma1","turma2"],"Selecione pessoas para cada turma de Almoço"));
-
-  // LANCHE (3 turmas)
-  const lanRow = document.createElement("div"); lanRow.className="func-row"; lanRow.style.display="block"; lanRow.style.marginBottom="8px";
-  lanRow.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><div><strong>Lanche</strong> <small>(3 turmas)</small></div><div><button class="small secondary" id="btn-sel-lanche">Selecionar turmas</button></div></div><div style="margin-top:6px"><small id="sel-lanche" style="color:#374151"></small></div>`;
-  container.appendChild(lanRow);
-  document.getElementById("btn-sel-lanche").addEventListener("click", ()=> openMultiGroupModal("lanche",3,["t1","t2","t3"],"Selecione pessoas para cada turma de Lanche"));
-
-  updateSelectedSummaries();
-}
-
-function barToNames(listIds){
-  if(!listIds || !listIds.length) return "Nenhum";
-  return listIds.map(id => (funcionarios.find(f=>String(f.id)===String(id))||{nome:"—"}).nome).join(", ");
-}
-function idListToNames(listIds){
-  if(!listIds || !listIds.length) return "Nenhum";
-  return listIds.map(id => (funcionarios.find(f=>String(f.id)===String(id))||{nome:"—"}).nome).join(", ");
-}
-
-function updateSelectedSummaries(){
-  const bar = assignments.bar || [];
-  const apa = assignments.aparadores || [];
-  const alm = assignments.almoco || {};
-  const lan = assignments.lanche || {};
-  const elBar = document.getElementById("sel-bar");
-  const elApa = document.getElementById("sel-aparadores");
-  const elAlm = document.getElementById("sel-almoco");
-  const elLan = document.getElementById("sel-lanche");
-  if(elBar) elBar.textContent = bar.length ? barToNames(bar) : "Nenhum";
-  if(elApa) elApa.textContent = apa.length ? idListToNames(apa) : "Nenhum";
-  if(elAlm) elAlm.textContent = `Turma1: ${alm.turma1? idListToNames(alm.turma1):"—"} — Turma2: ${alm.turma2? idListToNames(alm.turma2):"—"}`;
-  if(elLan) elLan.textContent = `T1: ${lan.t1? idListToNames(lan.t1):"—"} — T2: ${lan.t2? idListToNames(lan.t2):"—"} — T3: ${lan.t3? idListToNames(lan.t3):"—"}`;
-}
-
-// -------------------- modais de seleção --------------------
-function openSelectionModal(roleKey, limit, title){
+function atualizarTotalPresentes() {
+  if (!totalPresentesEl) return;
   const presentes = getPresentesDoDia();
-  const pool = (presentes.length ? presentes : funcionarios).slice().sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR"));
+  totalPresentesEl.textContent = (presentes ? presentes.length : 0).toString();
+}
+if (listaPresencaEl) listaPresencaEl.addEventListener("change", atualizarTotalPresentes);
 
-  const overlay = document.createElement("div"); overlay.className="sel-overlay";
-  Object.assign(overlay.style,{position:"fixed",left:0,top:0,right:0,bottom:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999});
-  const box = document.createElement("div"); box.className="sel-box"; Object.assign(box.style,{background:"#fff",padding:"12px",borderRadius:"8px",width:"92%",maxWidth:"480px",maxHeight:"86%",overflow:"auto"});
-
-  box.innerHTML = `<h3 style="margin:0 0 8px 0">${title}</h3><div style="margin-bottom:8px"><small>Limite: ${limit} pessoa(s)</small></div>`;
-  const list = document.createElement("div"); list.style.display="grid"; list.style.gap="6px";
-
-  const current = assignments[roleKey] ? assignments[roleKey].slice() : [];
-
-  pool.forEach(p=>{
-    const row = document.createElement("label"); row.style.display="flex"; row.style.alignItems="center"; row.style.gap="8px"; row.style.cursor="pointer";
-    const chk = document.createElement("input"); chk.type="checkbox"; chk.dataset.id = p.id;
-    if(current.includes(p.id)) chk.checked = true;
-    row.appendChild(chk); row.appendChild(document.createTextNode(p.nome));
-    list.appendChild(row);
-  });
-
-  box.appendChild(list);
-  const actions = document.createElement("div"); actions.style.display="flex"; actions.style.gap="8px"; actions.style.marginTop="10px"; actions.style.justifyContent="flex-end";
-  const btnCancel = document.createElement("button"); btnCancel.className="secondary small"; btnCancel.textContent="Cancelar"; btnCancel.onclick = ()=>document.body.removeChild(overlay);
-  const btnSave = document.createElement("button"); btnSave.className="primary small"; btnSave.textContent="Salvar seleção";
-  btnSave.onclick = ()=>{
-    const checks = list.querySelectorAll("input[type='checkbox']");
-    const chosen = [];
-    checks.forEach(c=>{ if(c.checked) chosen.push(String(c.dataset.id)); });
-    if(chosen.length>limit){ alert(`Você selecionou ${chosen.length} pessoas. O limite é ${limit}.`); return; }
-    if(roleKey==="bar") assignments.bar = chosen.slice(0,2);
-    else if(roleKey==="aparadores") assignments.aparadores = chosen.slice(0,3);
-    else assignments[roleKey] = chosen;
-    saveAssignments();
-    updateSelectedSummaries();
-    document.body.removeChild(overlay);
-  };
-  actions.appendChild(btnCancel); actions.appendChild(btnSave); box.appendChild(actions);
-  overlay.appendChild(box); document.body.appendChild(overlay);
+// -----------------------------
+// rodízio / lógica de geração (mantive seu modelo)
+// -----------------------------
+function rotateArray(arr, offset) {
+  const n = arr.length;
+  if (n === 0) return [];
+  const o = ((offset % n) + n) % n;
+  return arr.slice(o).concat(arr.slice(0, o));
 }
 
-function openMultiGroupModal(roleKey, groupsCount, groupKeys, title){
-  const presentes = getPresentesDoDia();
-  const pool = (presentes.length ? presentes : funcionarios).slice().sort((a,b)=>a.nome.localeCompare(b.nome,"pt-BR"));
-  const overlay = document.createElement("div"); overlay.className="sel-overlay";
-  Object.assign(overlay.style,{position:"fixed",left:0,top:0,right:0,bottom:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999});
-  const box = document.createElement("div"); box.className="sel-box"; Object.assign(box.style,{background:"#fff",padding:"12px",borderRadius:"8px",width:"96%",maxWidth:"900px",maxHeight:"86%",overflow:"auto"});
-  box.innerHTML = `<h3 style="margin:0 0 8px 0">${title}</h3><div style="margin-bottom:8px"><small>Selecione manualmente os colaboradores para cada turma.</small></div>`;
-
-  const existing = assignments[roleKey] || {};
-  const grid = document.createElement("div");
-  grid.style.display = "grid";
-  grid.style.gridTemplateColumns = `repeat(${groupsCount}, 1fr)`;
-  grid.style.gap = "12px";
-
-  for(let g=0; g<groupsCount; g++){
-    const key = groupKeys[g];
-    const col = document.createElement("div"); Object.assign(col.style,{border:"1px solid #eee",padding:"8px",borderRadius:"6px"});
-    const titleEl = document.createElement("div"); titleEl.innerHTML = `<strong>${roleKey==="almoco"?`Turma ${g+1}`:`T${g+1}`}</strong>`; titleEl.style.marginBottom="6px";
-    col.appendChild(titleEl);
-    const list = document.createElement("div"); list.style.display="grid"; list.style.gap="6px";
-    pool.forEach(p=>{
-      const lbl = document.createElement("label"); lbl.style.display="flex"; lbl.style.gap="8px"; lbl.style.alignItems="center";
-      const chk = document.createElement("input"); chk.type="checkbox"; chk.dataset.id = p.id;
-      const arr = existing[key] || [];
-      if(arr.includes(p.id)) chk.checked = true;
-      lbl.appendChild(chk); lbl.appendChild(document.createTextNode(p.nome));
-      list.appendChild(lbl);
-    });
-    col.appendChild(list); grid.appendChild(col);
-  }
-
-  box.appendChild(grid);
-  const actions = document.createElement("div"); Object.assign(actions.style,{display:"flex",gap:"8px",marginTop:"10px",justifyContent:"flex-end"});
-  const btnCancel = document.createElement("button"); btnCancel.className="secondary small"; btnCancel.textContent="Cancelar"; btnCancel.onclick = ()=>document.body.removeChild(overlay);
-  const btnSave = document.createElement("button"); btnSave.className="primary small"; btnSave.textContent="Salvar turmas";
-  btnSave.onclick = ()=>{
-    const newObj = {};
-    for(let i=0;i<grid.children.length;i++){
-      const checks = grid.children[i].querySelectorAll("input[type='checkbox']");
-      const chosen = [];
-      checks.forEach(c=>{ if(c.checked) chosen.push(String(c.dataset.id)); });
-      newObj[groupKeys[i]] = chosen;
-    }
-    assignments[roleKey] = newObj;
-    saveAssignments();
-    updateSelectedSummaries();
-    document.body.removeChild(overlay);
-  };
-  actions.appendChild(btnCancel); actions.appendChild(btnSave); box.appendChild(actions);
-  overlay.appendChild(box); document.body.appendChild(overlay);
-}
-
-// -------------------- lógica de geração de escala (usa assignments quando presentes) --------------------
-function rotateArray(arr, offset){
-  const n = arr.length; if(n===0) return []; const o = ((offset % n)+n)%n; return arr.slice(o).concat(arr.slice(0,o));
-}
-
-function gerarEscalaParaData(dataISO, presentes, offsetBase){
-  const presentesOrdenados = (presentes||[]).slice();
-  // não ordenar alfabeticamente por padrão: usar ordem dos presentes (o usuário controla)
+function gerarEscalaParaData(dataISO, presentes, offsetBase) {
+  const presentesOrdenados = (presentes || []).slice(); // mantenha a ordem dos presentes (ordem de cadastro)
   const listaRodizio = rotateArray(presentesOrdenados, offsetBase);
 
   const roles = {
-    bar1:null, bar2:null,
-    aparadores:[null,null,null],
-    almocoTurma1:[], almocoTurma2:[],
-    lancheTurma1:[], lancheTurma2:[], lancheTurma3:[]
+    bar1: null,
+    bar2: null,
+    aparadores: [null, null, null],
+    almocoTurma1: [],
+    almocoTurma2: [],
+    lancheTurma1: [],
+    lancheTurma2: [],
+    lancheTurma3: []
   };
 
-  if(!listaRodizio.length) return { dataISO, weekday: weekdayName(dataISO), roles, presentes: [] };
+  if (!listaRodizio || listaRodizio.length === 0) {
+    return { dataISO, weekday: weekdayName(dataISO), roles, presentes: [] };
+  }
 
-  // map presentes por id para assignment lookup
   const presentesById = {};
-  presentesOrdenados.forEach(p => { presentesById[String(p.id)] = p; });
+  presentesOrdenados.forEach((p) => (presentesById[p.id] = p));
 
-  // APLICAR ASSIGNMENTS SE EXISTIREM
-  if(assignments.bar && Array.isArray(assignments.bar)){
-    roles.bar1 = presentesById[String(assignments.bar[0])] || null;
-    roles.bar2 = presentesById[String(assignments.bar[1])] || null;
+  // preenche com assignments manuais (se existirem)
+  if (assignments.bar && Array.isArray(assignments.bar) && assignments.bar.length > 0) {
+    roles.bar1 = presentesById[assignments.bar[0]] || null;
+    roles.bar2 = presentesById[assignments.bar[1]] || null;
   }
-  if(assignments.aparadores && Array.isArray(assignments.aparadores)){
-    for(let i=0;i<3;i++) roles.aparadores[i] = presentesById[String(assignments.aparadores[i])] || null;
+  if (assignments.aparadores && Array.isArray(assignments.aparadores)) {
+    for (let i = 0; i < 3; i++) roles.aparadores[i] = presentesById[assignments.aparadores[i]] || null;
   }
-  if(assignments.almoco){
-    roles.almocoTurma1 = (assignments.almoco.turma1||[]).map(id=>presentesById[String(id)]).filter(Boolean);
-    roles.almocoTurma2 = (assignments.almoco.turma2||[]).map(id=>presentesById[String(id)]).filter(Boolean);
+  if (assignments.almoco) {
+    roles.almocoTurma1 = (assignments.almoco.turma1 || []).map(id => presentesById[id]).filter(Boolean);
+    roles.almocoTurma2 = (assignments.almoco.turma2 || []).map(id => presentesById[id]).filter(Boolean);
   }
-  if(assignments.lanche){
-    roles.lancheTurma1 = (assignments.lanche.t1||[]).map(id=>presentesById[String(id)]).filter(Boolean);
-    roles.lancheTurma2 = (assignments.lanche.t2||[]).map(id=>presentesById[String(id)]).filter(Boolean);
-    roles.lancheTurma3 = (assignments.lanche.t3||[]).map(id=>presentesById[String(id)]).filter(Boolean);
-  }
-
-  // REMOVER USADOS DO POOL E COMPLETAR COM RODÍZIO
-  const used = new Set();
-  ["bar1","bar2"].forEach(k=>{ if(roles[k]) used.add(String(roles[k].id)); });
-  roles.aparadores.forEach(p=>{ if(p) used.add(String(p.id)); });
-  roles.almocoTurma1.forEach(p=>{ if(p) used.add(String(p.id)); });
-  roles.almocoTurma2.forEach(p=>{ if(p) used.add(String(p.id)); });
-  roles.lancheTurma1.forEach(p=>{ if(p) used.add(String(p.id)); });
-  roles.lancheTurma2.forEach(p=>{ if(p) used.add(String(p.id)); });
-  roles.lancheTurma3.forEach(p=>{ if(p) used.add(String(p.id)); });
-
-  const pool = listaRodizio.filter(p => !used.has(String(p.id)));
-
-  if(!roles.bar1 && pool.length>0) roles.bar1 = pool.shift();
-  if(!roles.bar2 && pool.length>0) roles.bar2 = pool.shift();
-
-  for(let i=0;i<3;i++){
-    if(!roles.aparadores[i] && pool.length>0) roles.aparadores[i] = pool.shift();
+  if (assignments.lanche) {
+    roles.lancheTurma1 = (assignments.lanche.t1 || []).map(id => presentesById[id]).filter(Boolean);
+    roles.lancheTurma2 = (assignments.lanche.t2 || []).map(id => presentesById[id]).filter(Boolean);
+    roles.lancheTurma3 = (assignments.lanche.t3 || []).map(id => presentesById[id]).filter(Boolean);
   }
 
+  // remover usados (manuais)
+  const usedIds = new Set();
+  if (roles.bar1) usedIds.add(roles.bar1.id);
+  if (roles.bar2) usedIds.add(roles.bar2.id);
+  roles.aparadores.forEach(p => { if (p) usedIds.add(p.id); });
+  roles.almocoTurma1.forEach(p => { if (p) usedIds.add(p.id); });
+  roles.almocoTurma2.forEach(p => { if (p) usedIds.add(p.id); });
+  roles.lancheTurma1.forEach(p => { if (p) usedIds.add(p.id); });
+  roles.lancheTurma2.forEach(p => { if (p) usedIds.add(p.id); });
+  roles.lancheTurma3.forEach(p => { if (p) usedIds.add(p.id); });
+
+  const pool = listaRodizio.filter(p => !usedIds.has(p.id));
+
+  // preencher bar se vazio
+  if (!roles.bar1 && pool.length > 0) roles.bar1 = pool.shift();
+  if (!roles.bar2 && pool.length > 0) roles.bar2 = pool.shift();
+
+  // aparadores
+  for (let i = 0; i < 3; i++) {
+    if (!roles.aparadores[i] && pool.length > 0) roles.aparadores[i] = pool.shift();
+  }
+
+  // restantes para almoço e lanche
   const restantes = pool.slice();
 
-  // Almoço (se não predefinido)
-  if((!roles.almocoTurma1 || roles.almocoTurma1.length===0) && (!roles.almocoTurma2 || roles.almocoTurma2.length===0)){
-    if(restantes.length>0){
-      const metade = Math.ceil(restantes.length/2);
-      roles.almocoTurma1 = restantes.slice(0,metade);
+  if ((!roles.almocoTurma1 || roles.almocoTurma1.length === 0) && (!roles.almocoTurma2 || roles.almocoTurma2.length === 0)) {
+    if (restantes.length > 0) {
+      const metade = Math.ceil(restantes.length / 2);
+      roles.almocoTurma1 = restantes.slice(0, metade);
       roles.almocoTurma2 = restantes.slice(metade);
     }
   }
 
-  // Lanche (se não predefinido)
-  if((!roles.lancheTurma1||roles.lancheTurma1.length===0) && (!roles.lancheTurma2||roles.lancheTurma2.length===0) && (!roles.lancheTurma3||roles.lancheTurma3.length===0)){
-    if(restantes.length>0){
-      const t1 = Math.ceil(restantes.length/3);
-      const t2 = Math.ceil((restantes.length - t1)/2);
-      roles.lancheTurma1 = restantes.slice(0,t1);
-      roles.lancheTurma2 = restantes.slice(t1, t1+t2);
-      roles.lancheTurma3 = restantes.slice(t1+t2);
+  if ((!roles.lancheTurma1 || roles.lancheTurma1.length === 0) &&
+      (!roles.lancheTurma2 || roles.lancheTurma2.length === 0) &&
+      (!roles.lancheTurma3 || roles.lancheTurma3.length === 0)) {
+    if (restantes.length > 0) {
+      const t1Size = Math.ceil(restantes.length / 3);
+      const t2Size = Math.ceil((restantes.length - t1Size) / 2);
+      roles.lancheTurma1 = restantes.slice(0, t1Size);
+      roles.lancheTurma2 = restantes.slice(t1Size, t1Size + t2Size);
+      roles.lancheTurma3 = restantes.slice(t1Size + t2Size);
     }
   }
 
   return { dataISO, weekday: weekdayName(dataISO), roles, presentes: presentesOrdenados };
 }
 
-// -------------------- render escala (HTML) --------------------
-function renderEscalaDocumento(escala){
-  const logo = loadLogo();
-  const dataBR = formatDateBR(escala.dataISO);
-  const nome = f => (f ? f.nome : "—");
-  const mapNomes = list => list && list.length ? list.map(p => p? p.nome : "—").join(", ") : "—";
-  const aparadores = (escala.roles.aparadores || []).map(a => nome(a));
+// -----------------------------
+// render escala para preview / impressão
+// -----------------------------
+function renderEscalaDocumento(escala) {
+  const logoData = localStorage.getItem(STORAGE_KEYS.LOGO);
+  const dataISO = escala && escala.dataISO ? escala.dataISO : "";
+  const weekday = escala && escala.weekday ? escala.weekday : weekdayName(dataISO);
+  const roles = escala && escala.roles ? escala.roles : {};
+  const dataBR = formatDateBR(dataISO);
+
+  const nome = (f) => (f ? f.nome : "—");
+  const mapNomes = (list) => list && list.length ? list.map(p => p ? p.nome : "—").join(", ") : "—";
+  const aparadoresNomes = (roles.aparadores || []).map(a => nome(a));
 
   const html = `
     <article class="escala-documento">
       <header class="escala-header">
-        ${logo ? `<img src="${logo}" alt="Logo Terra do Sol" />` : ""}
+        ${logoData ? `<img src="${logoData}" alt="Logo Terra do Sol" />` : ""}
         <h1>BARRACA TERRA DO SOL</h1>
         <h2>Escala Operacional do Dia</h2>
-        <p>${escala.weekday} — ${dataBR}</p>
+        <p>${weekday} — ${dataBR}</p>
       </header>
 
       <section class="escala-section">
         <h3>🍽 Almoço</h3>
         <small>Tempo: 40 minutos cada turma</small>
         <table class="escala-table">
-          <thead><tr><th>Turma</th><th>Horário</th><th>Colaboradores</th></tr></thead>
+          <thead>
+            <tr><th>Turma</th><th>Horário</th><th>Colaboradores</th></tr>
+          </thead>
           <tbody>
-            <tr><td>1ª Turma</td><td>10:00 → 10:40</td><td class="editable" data-role="almocoTurma1">${mapNomes(escala.roles.almocoTurma1)}</td></tr>
-            <tr><td>2ª Turma</td><td>10:40 → 11:20</td><td class="editable" data-role="almocoTurma2">${mapNomes(escala.roles.almocoTurma2)}</td></tr>
+            <tr><td>1ª Turma</td><td>10:00 → 10:40</td><td>${mapNomes(roles.almocoTurma1 || [])}</td></tr>
+            <tr><td>2ª Turma</td><td>10:40 → 11:20</td><td>${mapNomes(roles.almocoTurma2 || [])}</td></tr>
           </tbody>
         </table>
       </section>
@@ -498,11 +376,13 @@ function renderEscalaDocumento(escala){
         <h3>☕ Lanche</h3>
         <small>Tempo: 20 minutos cada turma</small>
         <table class="escala-table">
-          <thead><tr><th>Turma</th><th>Horário</th><th>Colaboradores</th></tr></thead>
+          <thead>
+            <tr><th>Turma</th><th>Horário</th><th>Colaboradores</th></tr>
+          </thead>
           <tbody>
-            <tr><td>1ª Turma</td><td>15:00 → 15:20</td><td class="editable" data-role="lancheTurma1">${mapNomes(escala.roles.lancheTurma1)}</td></tr>
-            <tr><td>2ª Turma</td><td>15:20 → 15:40</td><td class="editable" data-role="lancheTurma2">${mapNomes(escala.roles.lancheTurma2)}</td></tr>
-            <tr><td>3ª Turma</td><td>15:40 → 16:00</td><td class="editable" data-role="lancheTurma3">${mapNomes(escala.roles.lancheTurma3)}</td></tr>
+            <tr><td>1ª Turma</td><td>15:00 → 15:20</td><td>${mapNomes(roles.lancheTurma1 || [])}</td></tr>
+            <tr><td>2ª Turma</td><td>15:20 → 15:40</td><td>${mapNomes(roles.lancheTurma2 || [])}</td></tr>
+            <tr><td>3ª Turma</td><td>15:40 → 16:00</td><td>${mapNomes(roles.lancheTurma3 || [])}</td></tr>
           </tbody>
         </table>
       </section>
@@ -512,9 +392,9 @@ function renderEscalaDocumento(escala){
         <table class="escala-table">
           <thead><tr><th>Setor</th><th>Responsável</th></tr></thead>
           <tbody>
-            <tr><td>Salão + Coqueiro direito</td><td class="editable" data-role="aparadores" data-index="0">${aparadores[0]||'—'}</td></tr>
-            <tr><td>Praia direita + Parquinho</td><td class="editable" data-role="aparadores" data-index="1">${aparadores[1]||'—'}</td></tr>
-            <tr><td>Coqueiro esquerdo + Praia esquerda</td><td class="editable" data-role="aparadores" data-index="2">${aparadores[2]||'—'}</td></tr>
+            <tr><td>Salão + Coqueiro direito</td><td>${aparadoresNomes[0] || "—"}</td></tr>
+            <tr><td>Praia direita + Parquinho</td><td>${aparadoresNomes[1] || "—"}</td></tr>
+            <tr><td>Coqueiro esquerdo + Praia esquerda</td><td>${aparadoresNomes[2] || "—"}</td></tr>
           </tbody>
         </table>
       </section>
@@ -524,8 +404,8 @@ function renderEscalaDocumento(escala){
         <table class="escala-table">
           <thead><tr><th>Posição</th><th>Responsável</th></tr></thead>
           <tbody>
-            <tr><td>Bar 1 (preferência 1ª turma)</td><td class="editable" data-role="bar1">${nome(escala.roles.bar1)}</td></tr>
-            <tr><td>Bar 2 (preferência 2ª turma)</td><td class="editable" data-role="bar2">${nome(escala.roles.bar2)}</td></tr>
+            <tr><td>Bar 1 (preferência 1ª turma)</td><td>${nome(roles.bar1)}</td></tr>
+            <tr><td>Bar 2 (preferência 2ª turma)</td><td>${nome(roles.bar2)}</td></tr>
           </tbody>
         </table>
       </section>
@@ -536,285 +416,622 @@ function renderEscalaDocumento(escala){
       </section>
     </article>
   `;
-  const container = document.createElement("div"); container.innerHTML = html.trim();
+  const container = document.createElement("div");
+  container.innerHTML = html.trim();
   return container.firstElementChild;
 }
 
-// -------------------- edição manual via clique (prompt simples) --------------------
-function enablePreviewEditing(previewEl, escalaObj){
-  if(!previewEl) return;
-  // style hint
-  previewEl.querySelectorAll(".editable").forEach(td=>{
-    td.style.cursor = "pointer";
-    td.title = "Clique para editar (substituir por um presente ou limpar)";
-  });
+// -----------------------------
+// UI FUNÇÕES & atribuições (mantém edição manual)
+// -----------------------------
+const sectionDia = document.getElementById("section-dia");
 
-  // remove previous handler to avoid duplicates
-  previewEl._editHandler && previewEl.removeEventListener("click", previewEl._editHandler);
-
-  const handler = (e)=>{
-    const td = e.target.closest(".editable");
-    if(!td) return;
-    const role = td.dataset.role;
-    const idx = td.dataset.index !== undefined ? Number(td.dataset.index) : null;
-
-    const presentes = escalaObj.presentes || [];
-    // options: limpar + presentes
-    const options = [{ label: "— (limpar)", value: "" }].concat(presentes.map(p=>({ label: p.nome, value: String(p.id) })));
-    let promptText = `Escolha opção:\n`;
-    options.forEach((o,i)=> promptText += `${i}: ${o.label}\n`);
-    const choice = prompt(promptText + "\nDigite o número da opção desejada:", "0");
-    if(choice === null) return;
-    const c = parseInt(choice,10);
-    if(isNaN(c) || c<0 || c>=options.length){ alert("Escolha inválida"); return; }
-    const sel = options[c];
-
-    // aplicar mudança no objeto escalaObj.roles
-    const apply = (roleKey, index, selectedValue)=>{
-      if(roleKey==="aparadores" && index !== null){
-        escalaObj.roles.aparadores[index] = selectedValue ? funcionarios.find(f=>String(f.id)===selectedValue) : null;
-      } else if(roleKey==="bar1" || roleKey==="bar2"){
-        escalaObj.roles[roleKey] = selectedValue ? funcionarios.find(f=>String(f.id)===selectedValue) : null;
-      } else if(roleKey.startsWith("almoco") || roleKey.startsWith("lanche")){
-        if(selectedValue){
-          escalaObj.roles[roleKey] = [ funcionarios.find(f=>String(f.id)===selectedValue) ];
-        } else {
-          escalaObj.roles[roleKey] = [];
-        }
-      }
-    };
-
-    apply(role, idx, sel.value || "");
-    // re-render preview (keep ultimoResultadoDia reference updated)
-    previewEl.innerHTML = "";
-    previewEl.appendChild(renderEscalaDocumento(escalaObj));
-    enablePreviewEditing(previewEl, escalaObj);
-  };
-
-  previewEl.addEventListener("click", handler);
-  previewEl._editHandler = handler;
+function ensureFuncoesContainer() {
+  if (!sectionDia) return;
+  let card = sectionDia.querySelector("#card-funcoes");
+  if (!card) {
+    card = document.createElement("section");
+    card.id = "card-funcoes";
+    card.className = "card";
+    const previewCard = sectionDia.querySelector(".preview-card");
+    if (previewCard && previewCard.parentNode) previewCard.parentNode.insertBefore(card, previewCard);
+    else sectionDia.appendChild(card);
+  }
+  card.innerHTML = "<h3>Funções & Atribuições (defina e selecione)</h3><div id='funcoes-list'></div>";
+  renderFuncoesUI();
 }
 
-// -------------------- ações Escala do Dia --------------------
-if(els.btnGerarDia){
-  els.btnGerarDia.addEventListener("click", ()=>{
+function renderFuncoesUI() {
+  const container = document.getElementById("funcoes-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  // BAR
+  const barRow = document.createElement("div");
+  barRow.className = "func-row";
+  barRow.style.display = "flex";
+  barRow.style.alignItems = "center";
+  barRow.style.justifyContent = "space-between";
+  barRow.style.marginBottom = "8px";
+  barRow.innerHTML = `<div><strong>Bar</strong> <small>(2 posições)</small></div>`;
+  const barActions = document.createElement("div");
+  const btnSelBar = document.createElement("button");
+  btnSelBar.className = "small secondary";
+  btnSelBar.textContent = "Selecionar";
+  btnSelBar.addEventListener("click", () => openSelectionModal("bar", "2 posições (sem limite)", "Selecione para o Bar"));
+  barActions.appendChild(btnSelBar);
+  const spanBarSelected = document.createElement("div");
+  spanBarSelected.id = "sel-bar";
+  spanBarSelected.style.marginLeft = "8px";
+  barActions.appendChild(spanBarSelected);
+  barRow.appendChild(barActions);
+  container.appendChild(barRow);
+
+  // APARADORES
+  const apaRow = document.createElement("div");
+  apaRow.className = "func-row";
+  apaRow.style.display = "flex";
+  apaRow.style.alignItems = "center";
+  apaRow.style.justifyContent = "space-between";
+  apaRow.style.marginBottom = "8px";
+  apaRow.innerHTML = `<div><strong>Aparadores</strong> <small>(3 posições)</small></div>`;
+  const apaActions = document.createElement("div");
+  const btnSelApa = document.createElement("button");
+  btnSelApa.className = "small secondary";
+  btnSelApa.textContent = "Selecionar";
+  btnSelApa.addEventListener("click", () => openSelectionModal("aparadores", "3 posições (sem limite)", "Selecione Aparadores"));
+  apaActions.appendChild(btnSelApa);
+  const spanApaSelected = document.createElement("div");
+  spanApaSelected.id = "sel-aparadores";
+  spanApaSelected.style.marginLeft = "8px";
+  apaActions.appendChild(spanApaSelected);
+  apaRow.appendChild(apaActions);
+  container.appendChild(apaRow);
+
+  // ALMOÇO (2 turmas)
+  const almRow = document.createElement("div");
+  almRow.className = "func-row";
+  almRow.style.display = "block";
+  almRow.style.marginBottom = "8px";
+  almRow.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><div><strong>Almoço</strong> <small>(2 turmas)</small></div><div><button class="small secondary" id="btn-sel-almoco">Selecionar turmas</button></div></div><div style="margin-top:6px"><small id="sel-almoco" style="color:#374151"></small></div>`;
+  container.appendChild(almRow);
+  document.getElementById("btn-sel-almoco").addEventListener("click", () => openMultiGroupModal("almoco", 2, ["turma1","turma2"], "Selecione pessoas para cada turma de Almoço"));
+
+  // LANCHE (3 turmas)
+  const lanRow = document.createElement("div");
+  lanRow.className = "func-row";
+  lanRow.style.display = "block";
+  lanRow.style.marginBottom = "8px";
+  lanRow.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><div><strong>Lanche</strong> <small>(3 turmas)</small></div><div><button class="small secondary" id="btn-sel-lanche">Selecionar turmas</button></div></div><div style="margin-top:6px"><small id="sel-lanche" style="color:#374151"></small></div>`;
+  container.appendChild(lanRow);
+  document.getElementById("btn-sel-lanche").addEventListener("click", () => openMultiGroupModal("lanche", 3, ["t1","t2","t3"], "Selecione pessoas para cada turma de Lanche"));
+
+  updateSelectedSummaries();
+}
+
+function updateSelectedSummaries() {
+  document.getElementById("sel-bar").textContent = assignments.bar ? idsToNames(assignments.bar) : "Nenhum";
+  document.getElementById("sel-aparadores").textContent = assignments.aparadores ? idsToNames(assignments.aparadores) : "Nenhum";
+  const alm = assignments.almoco || {};
+  document.getElementById("sel-almoco").textContent = `Turma1: ${alm.turma1 ? idsToNames(alm.turma1) : "—"} — Turma2: ${alm.turma2 ? idsToNames(alm.turma2) : "—"}`;
+  const lan = assignments.lanche || {};
+  document.getElementById("sel-lanche").textContent = `T1: ${lan.t1 ? idsToNames(lan.t1) : "—"} — T2: ${lan.t2 ? idsToNames(lan.t2) : "—"} — T3: ${lan.t3 ? idsToNames(lan.t3) : "—"}`;
+}
+
+function idsToNames(list) {
+  if (!list || list.length === 0) return "Nenhum";
+  return list.map(id => {
+    const f = funcionarios.find(x => x.id === id);
+    return f ? f.nome : "—";
+  }).join(", ");
+}
+
+// -----------------------------
+// MODAL DE SELEÇÃO (multiselect ilimitado) + reordenar
+// -----------------------------
+function openSelectionModal(roleKey, hint, title) {
+  const presentes = getPresentesDoDia();
+  const pool = (presentes.length ? presentes : funcionarios).slice(); // PRESERVAR ordem de cadastro
+
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.left = 0; overlay.style.top = 0; overlay.style.right = 0; overlay.style.bottom = 0;
+  overlay.style.background = "rgba(0,0,0,0.45)";
+  overlay.style.display = "flex"; overlay.style.alignItems = "center"; overlay.style.justifyContent = "center";
+  overlay.style.zIndex = 9999;
+
+  const box = document.createElement("div");
+  box.style.background = "#fff"; box.style.padding = "12px"; box.style.borderRadius = "8px";
+  box.style.width = "90%"; box.style.maxWidth = "520px"; box.style.maxHeight = "80%"; box.style.overflow = "auto";
+
+  box.innerHTML = `<h3 style="margin:0 0 8px 0">${title}</h3><div style="margin-bottom:8px"><small>${hint}</small></div>`;
+
+  const list = document.createElement("div");
+  list.style.display = "grid"; list.style.gap = "6px";
+
+  const current = assignments[roleKey] ? assignments[roleKey].slice() : [];
+
+  pool.forEach((p) => {
+    const row = document.createElement("div");
+    row.style.display = "flex"; row.style.alignItems = "center"; row.style.gap = "8px";
+    row.style.border = "1px solid #f0f0f0"; row.style.padding = "6px"; row.style.borderRadius = "6px";
+
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.dataset.id = p.id;
+    if (current.includes(p.id)) chk.checked = true;
+
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = p.nome;
+    nameSpan.style.flex = "1";
+
+    // up/down buttons to reorder visually
+    const upBtn = document.createElement("button");
+    upBtn.className = "small secondary";
+    upBtn.textContent = "↑";
+    upBtn.title = "Mover para cima";
+    upBtn.onclick = () => {
+      const prev = row.previousElementSibling;
+      if (prev) list.insertBefore(row, prev);
+    };
+    const downBtn = document.createElement("button");
+    downBtn.className = "small secondary";
+    downBtn.textContent = "↓";
+    downBtn.title = "Mover para baixo";
+    downBtn.onclick = () => {
+      const next = row.nextElementSibling;
+      if (next) list.insertBefore(next, row);
+    };
+
+    row.appendChild(chk);
+    row.appendChild(nameSpan);
+    row.appendChild(upBtn);
+    row.appendChild(downBtn);
+
+    list.appendChild(row);
+  });
+
+  box.appendChild(list);
+
+  const actions = document.createElement("div");
+  actions.style.display = "flex"; actions.style.justifyContent = "flex-end"; actions.style.gap = "8px"; actions.style.marginTop = "10px";
+
+  const btnCancel = document.createElement("button");
+  btnCancel.className = "secondary small";
+  btnCancel.textContent = "Cancelar";
+  btnCancel.onclick = () => document.body.removeChild(overlay);
+
+  const btnSave = document.createElement("button");
+  btnSave.className = "primary small";
+  btnSave.textContent = "Salvar seleção";
+  btnSave.onclick = () => {
+    // Collect selected preserving current visual order
+    const rows = Array.from(list.children);
+    const chosen = [];
+    rows.forEach(r => {
+      const c = r.querySelector("input[type='checkbox']");
+      if (c && c.checked) chosen.push(Number(c.dataset.id));
+    });
+    // Save
+    if (roleKey === "bar") assignments.bar = chosen.slice(); // keep order chosen
+    else if (roleKey === "aparadores") assignments.aparadores = chosen.slice();
+    else assignments[roleKey] = chosen.slice();
+    saveJSON(STORAGE_KEYS.ASSIGNMENTS, assignments);
+    updateSelectedSummaries();
+    document.body.removeChild(overlay);
+  };
+
+  actions.appendChild(btnCancel);
+  actions.appendChild(btnSave);
+  box.appendChild(actions);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+// -----------------------------
+// MULTI-GROUP MODAL (almoco/lanche) com reordenar
+// -----------------------------
+function openMultiGroupModal(roleKey, groupsCount, groupKeys, title) {
+  const presentes = getPresentesDoDia();
+  const pool = (presentes.length ? presentes : funcionarios).slice(); // ordem cadastro
+
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.left = 0; overlay.style.top = 0; overlay.style.right = 0; overlay.style.bottom = 0;
+  overlay.style.background = "rgba(0,0,0,0.45)";
+  overlay.style.display = "flex"; overlay.style.alignItems = "center"; overlay.style.justifyContent = "center";
+  overlay.style.zIndex = 9999;
+
+  const box = document.createElement("div");
+  box.style.background = "#fff"; box.style.padding = "12px"; box.style.borderRadius = "8px";
+  box.style.width = "95%"; box.style.maxWidth = "900px"; box.style.maxHeight = "86%"; box.style.overflow = "auto";
+
+  box.innerHTML = `<h3 style="margin:0 0 8px 0">${title}</h3><div style="margin-bottom:8px"><small>Selecione para cada turma. Você pode marcar quantos quiser e usar ↑↓ para ordenar.</small></div>`;
+
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = `repeat(${groupsCount}, 1fr)`;
+  grid.style.gap = "12px";
+
+  const existing = assignments[roleKey] || {};
+
+  for (let g = 0; g < groupsCount; g++) {
+    const key = groupKeys[g];
+    const col = document.createElement("div");
+    col.style.border = "1px solid #eee"; col.style.padding = "8px"; col.style.borderRadius = "6px";
+    const titleEl = document.createElement("div");
+    titleEl.innerHTML = `<strong>${roleKey === "almoco" ? `Turma ${g+1}` : `T${g+1}`}</strong>`;
+    titleEl.style.marginBottom = "6px";
+    col.appendChild(titleEl);
+
+    const list = document.createElement("div");
+    list.style.display = "grid";
+    list.style.gap = "6px";
+
+    pool.forEach(p => {
+      const lbl = document.createElement("div");
+      lbl.style.display = "flex"; lbl.style.alignItems = "center"; lbl.style.gap = "8px";
+      lbl.style.border = "1px solid #f5f5f5"; lbl.style.padding = "6px"; lbl.style.borderRadius = "4px";
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.dataset.id = p.id;
+      const arr = existing[key] || [];
+      if (arr.includes(p.id)) chk.checked = true;
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = p.nome;
+      nameSpan.style.flex = "1";
+      const upBtn = document.createElement("button");
+      upBtn.className = "small secondary"; upBtn.textContent = "↑";
+      upBtn.onclick = () => { const prev = lbl.previousElementSibling; if (prev) list.insertBefore(lbl, prev); };
+      const downBtn = document.createElement("button");
+      downBtn.className = "small secondary"; downBtn.textContent = "↓";
+      downBtn.onclick = () => { const next = lbl.nextElementSibling; if (next) list.insertBefore(next, lbl); };
+      lbl.appendChild(chk); lbl.appendChild(nameSpan); lbl.appendChild(upBtn); lbl.appendChild(downBtn);
+      list.appendChild(lbl);
+    });
+
+    col.appendChild(list);
+    grid.appendChild(col);
+  }
+
+  box.appendChild(grid);
+
+  const actions = document.createElement("div");
+  actions.style.display = "flex"; actions.style.gap = "8px"; actions.style.marginTop = "10px"; actions.style.justifyContent = "flex-end";
+  const btnCancel = document.createElement("button"); btnCancel.className = "secondary small"; btnCancel.textContent = "Cancelar";
+  btnCancel.onclick = () => document.body.removeChild(overlay);
+  const btnSave = document.createElement("button"); btnSave.className = "primary small"; btnSave.textContent = "Salvar turmas";
+  btnSave.onclick = () => {
+    const newObj = {};
+    const cols = grid.children;
+    for (let i = 0; i < cols.length; i++) {
+      const checks = cols[i].querySelectorAll("input[type='checkbox']");
+      const chosen = [];
+      checks.forEach(c => { if (c.checked) chosen.push(Number(c.dataset.id)); });
+      newObj[groupKeys[i]] = chosen;
+    }
+    assignments[roleKey] = newObj;
+    saveJSON(STORAGE_KEYS.ASSIGNMENTS, assignments);
+    updateSelectedSummaries();
+    document.body.removeChild(overlay);
+  };
+  actions.appendChild(btnCancel); actions.appendChild(btnSave); box.appendChild(actions);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+// -----------------------------
+// botões principais Escala do Dia
+// -----------------------------
+const btnGerarDia = document.getElementById("btn-gerar-dia");
+const btnSalvarDia = document.getElementById("btn-salvar-dia");
+const btnImprimirDia = document.getElementById("btn-imprimir-dia");
+const previewDiaEl = document.getElementById("preview-dia");
+const printAreaEl = document.getElementById("print-area");
+
+if (btnGerarDia) {
+  btnGerarDia.addEventListener("click", () => {
     const presentes = getPresentesDoDia();
-    const dataISO = (els.dataDia && els.dataDia.value) || todayISO();
-    if(presentes.length < 1){
-      if(!confirm("Você selecionou menos de 1 pessoa. Continuar?")) return;
+    const dataISO = (dataDiaInput && dataDiaInput.value) || formatDateISO(new Date());
+    if (presentes.length < 1) {
+      if (!confirm("Você selecionou menos de 1 pessoa. Deseja continuar?")) return;
     }
     const escala = gerarEscalaParaData(dataISO, presentes, rodizioOffset);
     ultimoResultadoDia = escala;
-    if(els.previewDia){ els.previewDia.innerHTML=""; els.previewDia.classList.remove("empty"); els.previewDia.appendChild(renderEscalaDocumento(escala)); enablePreviewEditing(els.previewDia, escala); }
-    if(els.btnSalvarDia) els.btnSalvarDia.disabled = false;
-    if(els.btnImprimirDia) els.btnImprimirDia.disabled = false;
-    // export Excel button (preview)
-    ensureExportButtons();
-    // atualizar rodizio
-    rodizioOffset = Number(rodizioOffset) + 1; saveRodizio();
+    if (previewDiaEl) {
+      previewDiaEl.innerHTML = "";
+      previewDiaEl.classList.remove("empty");
+      previewDiaEl.appendChild(renderEscalaDocumento(escala));
+    }
+    if (btnSalvarDia) btnSalvarDia.disabled = false;
+    if (btnImprimirDia) btnImprimirDia.disabled = false;
+    rodizioOffset = rodizioOffset + 1;
+    saveJSON(STORAGE_KEYS.RODIZIO_OFFSET, rodizioOffset);
   });
 }
 
-if(els.btnSalvarDia){
-  els.btnSalvarDia.addEventListener("click", ()=>{
-    if(!ultimoResultadoDia) return;
-    const hist = loadJSON(SK.HIST, {});
-    hist[ultimoResultadoDia.dataISO] = ultimoResultadoDia;
-    historico = hist; saveHistorico();
+if (btnSalvarDia) {
+  btnSalvarDia.addEventListener("click", () => {
+    if (!ultimoResultadoDia) return;
+    const hist = loadJSON(STORAGE_KEYS.HISTORICO, {});
+    const key = ultimoResultadoDia.dataISO;
+    hist[key] = ultimoResultadoDia;
+    saveJSON(STORAGE_KEYS.HISTORICO, hist);
     alert("Escala do dia salva no histórico.");
     renderHistorico();
   });
 }
 
-if(els.btnImprimirDia){
-  els.btnImprimirDia.addEventListener("click", ()=>{
-    if(!ultimoResultadoDia) return;
-    els.printArea.innerHTML = "";
-    // header with logo + date
-    const header = document.createElement("div"); header.style.textAlign="center";
-    const logo = loadLogo();
-    if(logo){ const img = document.createElement("img"); img.src = logo; img.style.maxWidth="220px"; img.style.maxHeight="110px"; img.style.objectFit="contain"; header.appendChild(img); }
-    const info = document.createElement("div"); info.innerHTML = `<h1 style="margin:6px 0">BARRACA TERRA DO SOL</h1><div style="font-size:13px">${weekdayName(ultimoResultadoDia.dataISO)} — ${formatDateBR(ultimoResultadoDia.dataISO)}</div>`; header.appendChild(info);
-    els.printArea.appendChild(header);
-    els.printArea.appendChild(renderEscalaDocumento(ultimoResultadoDia));
+if (btnImprimirDia) {
+  btnImprimirDia.addEventListener("click", () => {
+    if (!ultimoResultadoDia) return;
+    if (!printAreaEl) return;
+    printAreaEl.innerHTML = "";
+    const doc = renderEscalaDocumento(ultimoResultadoDia);
+    printAreaEl.appendChild(doc);
     window.print();
   });
 }
 
-// -------------------- semana (gerar e export) --------------------
-if(els.btnGerarSemana){
-  els.btnGerarSemana.addEventListener("click", ()=>{
+// -----------------------------
+// ESCALA DA SEMANA (mantive funcionalidade)
+// -----------------------------
+const dataSemanaInput = document.getElementById("data-semana");
+const btnGerarSemana = document.getElementById("btn-gerar-semana");
+const btnImprimirSemana = document.getElementById("btn-imprimir-semana");
+const previewSemanaEl = document.getElementById("preview-semana");
+
+if (btnGerarSemana) {
+  btnGerarSemana.addEventListener("click", () => {
     const presentes = getPresentesDoDia();
-    const dataInicialISO = (els.dataSemana && els.dataSemana.value) || todayISO();
-    const dataInicial = new Date(parseDateInputToDateString(dataInicialISO));
-    const resultados = []; let offsetLocal = rodizioOffset;
-    for(let i=0;i<7;i++){
-      const d = new Date(dataInicial); d.setDate(d.getDate()+i); const iso = todayISO(d);
-      const escala = gerarEscalaParaData(iso, presentes, offsetLocal);
-      resultados.push(escala); offsetLocal++;
+    if (presentes.length < 1) {
+      if (!confirm("Você selecionou menos de 1 pessoa. Deseja continuar?")) return;
+    }
+    const dataInicialISO = (dataSemanaInput && dataSemanaInput.value) || formatDateISO(new Date());
+    const dataInicial = parseDateInput(dataInicialISO);
+    const resultados = [];
+    let offsetLocal = rodizioOffset;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(dataInicial);
+      d.setDate(d.getDate() + i);
+      const iso = formatDateISO(d);
+      const escalaDia = gerarEscalaParaData(iso, presentes, offsetLocal);
+      resultados.push(escalaDia);
+      offsetLocal++;
     }
     ultimoResultadoSemana = resultados;
-    if(els.previewSemana){ els.previewSemana.innerHTML=""; els.previewSemana.classList.remove("empty"); resultados.forEach(sc=> els.previewSemana.appendChild(renderEscalaDocumento(sc))); }
-    if(els.btnImprimirSemana) els.btnImprimirSemana.disabled = false;
-    rodizioOffset = offsetLocal; saveRodizio();
-    // ensure export week button
-    ensureExportButtons();
+    if (previewSemanaEl) {
+      previewSemanaEl.innerHTML = "";
+      previewSemanaEl.classList.remove("empty");
+      resultados.forEach(escala => previewSemanaEl.appendChild(renderEscalaDocumento(escala)));
+    }
+    if (btnImprimirSemana) btnImprimirSemana.disabled = false;
+    rodizioOffset = offsetLocal;
+    saveJSON(STORAGE_KEYS.RODIZIO_OFFSET, rodizioOffset);
   });
 }
-
-if(els.btnImprimirSemana){
-  els.btnImprimirSemana.addEventListener("click", ()=>{
-    if(!ultimoResultadoSemana || !ultimoResultadoSemana.length) return;
-    els.printArea.innerHTML = "";
-    const logo = loadLogo();
-    if(logo){
-      const img = document.createElement("img"); img.src = logo; img.style.maxWidth="220px"; img.style.maxHeight="110px"; img.style.objectFit="contain"; els.printArea.appendChild(img);
-    }
-    ultimoResultadoSemana.forEach(sc=> els.printArea.appendChild(renderEscalaDocumento(sc)));
+if (btnImprimirSemana) {
+  btnImprimirSemana.addEventListener("click", () => {
+    if (!ultimoResultadoSemana || ultimoResultadoSemana.length === 0) return;
+    if (!printAreaEl) return;
+    printAreaEl.innerHTML = "";
+    ultimoResultadoSemana.forEach(escala => printAreaEl.appendChild(renderEscalaDocumento(escala)));
     window.print();
   });
 }
 
-// helper to parse ISO date input safely
-function parseDateInputToDateString(value){
-  if(!value) return new Date();
-  const [y,m,d] = value.split("-").map(Number);
-  return new Date(y,m-1,d);
-}
+// -----------------------------
+// HISTÓRICO
+// -----------------------------
+const listaHistoricoEl = document.getElementById("lista-historico");
+const btnApagarHistorico = document.getElementById("btn-apagar-historico");
 
-// -------------------- histórico --------------------
-function renderHistorico(){
-  const hist = loadJSON(SK.HIST, {});
-  const keys = Object.keys(hist).sort();
-  if(!els.listaHistorico) return;
-  els.listaHistorico.innerHTML = "";
-  if(!keys.length){ els.listaHistorico.innerHTML = "<li>Nenhuma escala salva ainda.</li>"; return; }
-  keys.forEach(k=>{
-    const escala = hist[k];
-    const li = document.createElement("li"); li.className="list-item-row";
-    const main = document.createElement("div"); main.className="list-item-main"; main.innerHTML = `<span class="nome">${formatDateBR(k)} — ${weekdayName(k)}</span><small class="historico-meta">Presentes: ${escala.presentes?escala.presentes.length:0}</small>`;
-    const actions = document.createElement("div"); actions.className="list-item-actions";
-    const btnVer = document.createElement("button"); btnVer.className="secondary small"; btnVer.textContent="Ver / Imprimir";
-    btnVer.onclick = ()=>{ ultimoResultadoDia = escala; if(els.previewDia){ els.previewDia.innerHTML=""; els.previewDia.appendChild(renderEscalaDocumento(escala)); enablePreviewEditing(els.previewDia, escala); } if(els.btnImprimirDia) els.btnImprimirDia.disabled = false; document.querySelector('.tab-button[data-target="section-dia"]').click(); };
-    const btnDel = document.createElement("button"); btnDel.className="danger small"; btnDel.textContent="Apagar";
-    btnDel.onclick = ()=>{ if(confirm(`Apagar escala de ${formatDateBR(k)} do histórico?`)){ const h = loadJSON(SK.HIST,{}); delete h[k]; saveJSON(SK.HIST,h); renderHistorico(); } };
-    actions.appendChild(btnVer); actions.appendChild(btnDel); li.appendChild(main); li.appendChild(actions); els.listaHistorico.appendChild(li);
-  });
-}
-
-if(els.btnApagarHistorico){
-  els.btnApagarHistorico.addEventListener("click", ()=>{
-    if(confirm("Tem certeza que deseja apagar TODO o histórico de escalas? Essa ação não pode ser desfeita.")){ saveJSON(SK.HIST,{}); renderHistorico(); }
-  });
-}
-
-// -------------------- logo preview --------------------
-function renderLogoPreview(){
-  if(!els.logoPreviewContainer) return;
-  const logo = loadLogo();
-  els.logoPreviewContainer.innerHTML = "";
-  if(logo){ const img = document.createElement("img"); img.src = logo; img.alt = "Logo"; img.style.maxWidth="160px"; img.style.objectFit="contain"; els.logoPreviewContainer.appendChild(img); } else { els.logoPreviewContainer.innerHTML = "<p>Nenhuma logo selecionada.</p>"; }
-}
-if(els.inputLogo){
-  els.inputLogo.addEventListener("change", ()=>{
-    const file = els.inputLogo.files[0]; if(!file) return;
-    const reader = new FileReader(); reader.onload = (e)=>{ saveLogo(e.target.result); renderLogoPreview(); }; reader.readAsDataURL(file);
-  });
-}
-if(els.btnRemoverLogo){
-  els.btnRemoverLogo.addEventListener("click", ()=>{ if(confirm("Remover logo atual?")){ saveLogo(null); renderLogoPreview(); } });
-}
-if(els.btnResetRodizio){
-  els.btnResetRodizio.addEventListener("click", ()=>{ if(confirm("Resetar rodízio? Isso faz a contagem voltar ao início.")){ rodizioOffset = 0; saveRodizio(); alert("Rodízio resetado."); } });
-}
-
-// -------------------- export CSV / Excel --------------------
-function exportScaleToCSV(escala){
-  if(!escala){ alert("Gere a escala antes."); return; }
-  const rows = [];
-  rows.push(["Escala Terra do Sol"]);
-  rows.push([`${weekdayName(escala.dataISO)} — ${formatDateBR(escala.dataISO)}`]);
-  rows.push([]);
-  rows.push(["Almoço 1", (escala.roles.almocoTurma1||[]).map(p=>p.nome).join(", ")]);
-  rows.push(["Almoço 2", (escala.roles.almocoTurma2||[]).map(p=>p.nome).join(", ")]);
-  rows.push([]);
-  rows.push(["Lanche T1", (escala.roles.lancheTurma1||[]).map(p=>p.nome).join(", ")]);
-  rows.push(["Lanche T2", (escala.roles.lancheTurma2||[]).map(p=>p.nome).join(", ")]);
-  rows.push(["Lanche T3", (escala.roles.lancheTurma3||[]).map(p=>p.nome).join(", ")]);
-  rows.push([]);
-  rows.push(["Aparador 1", escala.roles.aparadores[0]?escala.roles.aparadores[0].nome:""]);
-  rows.push(["Aparador 2", escala.roles.aparadores[1]?escala.roles.aparadores[1].nome:""]);
-  rows.push(["Aparador 3", escala.roles.aparadores[2]?escala.roles.aparadores[2].nome:""]);
-  rows.push([]);
-  rows.push(["Bar 1", escala.roles.bar1?escala.roles.bar1.nome:""]);
-  rows.push(["Bar 2", escala.roles.bar2?escala.roles.bar2.nome:""]);
-  rows.push([]);
-  rows.push(["Total presentes", escala.presentes?escala.presentes.length:0]);
-
-  const csv = rows.map(r=> r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(";")).join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = `escala-${escala.dataISO}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-function exportWeekToCSV(semanaArray){
-  if(!semanaArray || !semanaArray.length){ alert("Gere a semana primeiro."); return; }
-  let all = [];
-  semanaArray.forEach(sc=>{
-    all.push([`${weekdayName(sc.dataISO)} — ${formatDateBR(sc.dataISO)}`]);
-    all.push(["Almoço 1", (sc.roles.almocoTurma1||[]).map(p=>p.nome).join(", ")]);
-    all.push(["Almoço 2", (sc.roles.almocoTurma2||[]).map(p=>p.nome).join(", ")]);
-    all.push([]);
-  });
-  const csv = all.map(r=> r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(";")).join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = `escala-semana.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-// ensure buttons for export are available
-function ensureExportButtons(){
-  // add Export CSV to actions-row near generate buttons if not exists
-  const dayActions = document.querySelector("#section-dia .actions-row");
-  if(dayActions && !document.getElementById("btn-export-csv-day")){
-    const btn = document.createElement("button");
-    btn.id = "btn-export-csv-day"; btn.className = "primary"; btn.textContent = "Exportar Excel (CSV)";
-    btn.style.marginLeft = "8px";
-    btn.onclick = ()=>{ if(ultimoResultadoDia) exportScaleToCSV(ultimoResultadoDia); else alert("Gere a escala do dia primeiro."); };
-    dayActions.appendChild(btn);
+function renderHistorico() {
+  const hist = loadJSON(STORAGE_KEYS.HISTORICO, {});
+  const datas = Object.keys(hist).sort();
+  if (!listaHistoricoEl) return;
+  listaHistoricoEl.innerHTML = "";
+  if (datas.length === 0) {
+    listaHistoricoEl.innerHTML = "<li>Nenhuma escala salva ainda.</li>";
+    return;
   }
+  datas.forEach(dataISO => {
+    const escala = hist[dataISO];
+    const li = document.createElement("li"); li.className = "list-item-row";
+    const main = document.createElement("div"); main.className = "list-item-main";
+    const spanNome = document.createElement("span"); spanNome.className = "nome";
+    spanNome.textContent = `${formatDateBR(dataISO)} — ${weekdayName(dataISO)}`;
+    const small = document.createElement("small"); small.className = "historico-meta";
+    small.textContent = `Presentes: ${escala.presentes ? escala.presentes.length : 0}`;
+    main.appendChild(spanNome); main.appendChild(small);
+    const actions = document.createElement("div"); actions.className = "list-item-actions";
+    const btnVer = document.createElement("button"); btnVer.className = "secondary small"; btnVer.textContent = "Ver / Imprimir";
+    btnVer.addEventListener("click", () => {
+      ultimoResultadoDia = escala;
+      if (previewDiaEl) { previewDiaEl.innerHTML = ""; previewDiaEl.classList.remove("empty"); previewDiaEl.appendChild(renderEscalaDocumento(escala)); }
+      if (btnImprimirDia) btnImprimirDia.disabled = false;
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+      const tabBtn = document.querySelector('.tab-button[data-target="section-dia"]'); if (tabBtn) tabBtn.classList.add("active");
+      document.querySelectorAll(".tab-section").forEach(s => s.classList.remove("active")); const sec = document.getElementById("section-dia"); if (sec) sec.classList.add("active");
+    });
+    const btnDel = document.createElement("button"); btnDel.className = "danger small"; btnDel.textContent = "Apagar";
+    btnDel.addEventListener("click", () => {
+      if (!confirm(`Apagar escala de ${formatDateBR(dataISO)} do histórico?`)) return;
+      const h = loadJSON(STORAGE_KEYS.HISTORICO, {});
+      delete h[dataISO];
+      saveJSON(STORAGE_KEYS.HISTORICO, h);
+      renderHistorico();
+    });
+    actions.appendChild(btnVer); actions.appendChild(btnDel);
+    li.appendChild(main); li.appendChild(actions); listaHistoricoEl.appendChild(li);
+  });
+}
+if (btnApagarHistorico) {
+  btnApagarHistorico.addEventListener("click", () => {
+    if (!confirm("Tem certeza que deseja apagar TODO o histórico de escalas? Essa ação não pode ser desfeita.")) return;
+    saveJSON(STORAGE_KEYS.HISTORICO, {});
+    renderHistorico();
+  });
+}
 
-  // also on preview card
+// -----------------------------
+// CONFIG (logo, rodízio)
+// -----------------------------
+const inputLogo = document.getElementById("input-logo");
+const logoPreviewContainer = document.getElementById("logo-preview-container");
+const btnRemoverLogo = document.getElementById("btn-remover-logo");
+const btnResetRodizio = document.getElementById("btn-reset-rodizio");
+
+function renderLogoPreview() {
+  if (!logoPreviewContainer) return;
+  const logoData = localStorage.getItem(STORAGE_KEYS.LOGO);
+  logoPreviewContainer.innerHTML = "";
+  if (logoData) {
+    const img = document.createElement("img");
+    img.src = logoData;
+    img.alt = "Logo da barraca";
+    logoPreviewContainer.appendChild(img);
+  } else {
+    logoPreviewContainer.innerHTML = "<p>Nenhuma logo selecionada.</p>";
+  }
+}
+if (inputLogo) {
+  inputLogo.addEventListener("change", () => {
+    const file = inputLogo.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      saveJSON(STORAGE_KEYS.LOGO, e.target.result);
+      renderLogoPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+if (btnRemoverLogo) {
+  btnRemoverLogo.addEventListener("click", () => {
+    if (!confirm("Remover logo atual?")) return;
+    localStorage.removeItem(STORAGE_KEYS.LOGO);
+    renderLogoPreview();
+  });
+}
+if (btnResetRodizio) {
+  btnResetRodizio.addEventListener("click", () => {
+    if (!confirm("Resetar rodízio? Isso faz a contagem voltar ao início.")) return;
+    rodizioOffset = 0;
+    saveJSON(STORAGE_KEYS.RODIZIO_OFFSET, rodizioOffset);
+    alert("Rodízio resetado.");
+  });
+}
+
+// -----------------------------
+// exportar excel (CSV simples)
+// -----------------------------
+function exportarCSVEscala(escala) {
+  if (!escala) { alert("Gere a escala primeiro."); return; }
+  const roles = escala.roles || {};
+  const rows = [
+    ["Escala Terra do Sol", formatDateBR(escala.dataISO)],
+    [],
+    ["Função","Colaboradores"],
+    ["Almoço 1", (roles.almocoTurma1 || []).map(p => p.nome).join(", ")],
+    ["Almoço 2", (roles.almocoTurma2 || []).map(p => p.nome).join(", ")],
+    ["Lanche 1", (roles.lancheTurma1 || []).map(p => p.nome).join(", ")],
+    ["Lanche 2", (roles.lancheTurma2 || []).map(p => p.nome).join(", ")],
+    ["Lanche 3", (roles.lancheTurma3 || []).map(p => p.nome).join(", ")],
+    ["Aparadores", (roles.aparadores || []).map(p => p ? p.nome : "").join(", ")],
+    ["Bar 1", roles.bar1 ? roles.bar1.nome : ""],
+    ["Bar 2", roles.bar2 ? roles.bar2.nome : ""]
+  ];
+  let csv = "";
+  rows.forEach(r => { csv += r.map(cell => `"${String(cell || "").replace(/"/g,'""')}"`).join(";") + "\n"; });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = `escala_${(escala.dataISO||"data")}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// adiciona botão Exportar Excel (CSV) próximo ao Gerar
+(function addExportButtons() {
+  const actions = document.querySelector("#section-dia .actions-row");
+  if (!actions) return;
+  const btnCsv = document.createElement("button");
+  btnCsv.className = "primary";
+  btnCsv.textContent = "Exportar Excel (CSV)";
+  btnCsv.style.marginLeft = "6px";
+  btnCsv.addEventListener("click", () => exportarCSVEscala(ultimoResultadoDia));
+  actions.appendChild(btnCsv);
+
+  // também botão no preview-card
   const previewCard = document.querySelector("#section-dia .preview-card");
-  if(previewCard && !document.getElementById("btn-export-csv-preview")){
-    const btn2 = document.createElement("button");
-    btn2.id = "btn-export-csv-preview"; btn2.className = "primary"; btn2.textContent = "Exportar Excel (CSV)";
-    btn2.onclick = ()=>{ if(ultimoResultadoDia) exportScaleToCSV(ultimoResultadoDia); else alert("Gere a escala do dia primeiro."); };
-    previewCard.appendChild(btn2);
+  if (previewCard) {
+    const btnCsvPrev = document.createElement("button");
+    btnCsvPrev.className = "primary";
+    btnCsvPrev.textContent = "Exportar Excel (CSV)";
+    btnCsvPrev.style.marginTop = "8px";
+    btnCsvPrev.addEventListener("click", () => exportarCSVEscala(ultimoResultadoDia));
+    previewCard.appendChild(btnCsvPrev);
   }
+})();
 
-  // export week button near week actions
-  const weekActions = document.querySelector("#section-semana .actions-row");
-  if(weekActions && !document.getElementById("btn-export-csv-week")){
-    const btnw = document.createElement("button");
-    btnw.id = "btn-export-csv-week"; btnw.className = "primary"; btnw.textContent = "Exportar Semana (CSV)";
-    btnw.onclick = ()=>{ if(ultimoResultadoSemana) exportWeekToCSV(ultimoResultadoSemana); else alert("Gere a semana primeiro."); };
-    weekActions.appendChild(btnw);
-  }
-}
-
-// -------------------- init --------------------
-function init(){
-  // set default dates
-  if(els.dataDia && !els.dataDia.value) els.dataDia.value = todayISO();
-  if(els.dataSemana && !els.dataSemana.value) els.dataSemana.value = todayISO();
-
+// -----------------------------
+// inicialização
+// -----------------------------
+function init() {
+  initDataInputs();
   renderFuncionarios();
   renderListaPresenca();
   renderLogoPreview();
   renderHistorico();
   ensureFuncoesContainer();
-  ensureExportButtons();
 }
-
 document.addEventListener("DOMContentLoaded", init);
+
+// -----------------------------
+// helpers usados no historic / storage
+// -----------------------------
+function loadHistorico() { return loadJSON(STORAGE_KEYS.HISTORICO, {}); }
+function saveHistorico(obj) { saveJSON(STORAGE_KEYS.HISTORICO, obj); }
+function saveAssignments(obj) { saveJSON(STORAGE_KEYS.ASSIGNMENTS, obj); }
+
+// -----------------------------
+// renderHistorico (definido aqui pois usa helpers)
+// -----------------------------
+function renderHistorico() {
+  const listaHistoricoEl = document.getElementById("lista-historico");
+  const hist = loadHistorico();
+  const datas = Object.keys(hist).sort();
+  if (!listaHistoricoEl) return;
+  listaHistoricoEl.innerHTML = "";
+  if (datas.length === 0) {
+    listaHistoricoEl.innerHTML = "<li>Nenhuma escala salva ainda.</li>";
+    return;
+  }
+  datas.forEach(dataISO => {
+    const escala = hist[dataISO];
+    const li = document.createElement("li"); li.className = "list-item-row";
+    const main = document.createElement("div"); main.className = "list-item-main";
+    const spanNome = document.createElement("span"); spanNome.className = "nome";
+    spanNome.textContent = `${formatDateBR(dataISO)} — ${weekdayName(dataISO)}`;
+    const small = document.createElement("small"); small.className = "historico-meta";
+    small.textContent = `Presentes: ${escala.presentes ? escala.presentes.length : 0}`;
+    main.appendChild(spanNome); main.appendChild(small);
+    const actions = document.createElement("div"); actions.className = "list-item-actions";
+    const btnVer = document.createElement("button"); btnVer.className = "secondary small"; btnVer.textContent = "Ver / Imprimir";
+    btnVer.onclick = () => {
+      ultimoResultadoDia = escala;
+      if (previewDiaEl) { previewDiaEl.innerHTML = ""; previewDiaEl.classList.remove("empty"); previewDiaEl.appendChild(renderEscalaDocumento(escala)); }
+      if (btnImprimirDia) btnImprimirDia.disabled = false;
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+      const tabBtn = document.querySelector('.tab-button[data-target="section-dia"]'); if (tabBtn) tabBtn.classList.add("active");
+      document.querySelectorAll(".tab-section").forEach(s => s.classList.remove("active")); const sec = document.getElementById("section-dia"); if (sec) sec.classList.add("active");
+    };
+    const btnDel = document.createElement("button"); btnDel.className = "danger small"; btnDel.textContent = "Apagar";
+    btnDel.onclick = () => {
+      if (!confirm(`Apagar escala de ${formatDateBR(dataISO)} do histórico?`)) return;
+      const h = loadHistorico(); delete h[dataISO]; saveHistorico(h); renderHistorico();
+    };
+    actions.appendChild(btnVer); actions.appendChild(btnDel);
+    li.appendChild(main); li.appendChild(actions); listaHistoricoEl.appendChild(li);
+  });
+}
