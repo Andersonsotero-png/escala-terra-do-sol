@@ -1,8 +1,4 @@
-// -----------------------------
-// Escala Terra do Sol - script.js
-// Versão final: login, dashboard, logout, rodízio, impressão com logo
-// -----------------------------
-
+JS 
 // -----------------------------
 // utilitários de data
 // -----------------------------
@@ -37,13 +33,9 @@ const STORAGE_KEYS = {
   LOGO: "tds_escala_logo",
   RODIZIO_OFFSET: "tds_escala_rodizio_offset",
   HISTORICO: "tds_escala_historico",
-  ASSIGNMENTS: "tds_escala_assignments",
-  LOGGED: "tds_escala_logged"
+  ASSIGNMENTS: "tds_escala_assignments"
 };
 
-// -----------------------------
-// simple storage helpers
-// -----------------------------
 function loadJSON(key, fallback) {
   const raw = localStorage.getItem(key);
   if (!raw) return fallback;
@@ -63,100 +55,7 @@ let ultimoResultadoDia = null;
 let ultimoResultadoSemana = null;
 
 // -----------------------------
-// elementos principais
-// -----------------------------
-const loginScreen = document.getElementById("login-screen");
-const appContainer = document.getElementById("app");
-const loginPasswordInput = document.getElementById("login-password");
-const btnLogin = document.getElementById("btn-login");
-
-const listaFuncionariosEl = document.getElementById("lista-funcionarios");
-const totalFuncionariosEl = document.getElementById("total-funcionarios");
-const formAddFuncionario = document.getElementById("form-add-funcionario");
-const inputNomeFuncionario = document.getElementById("nome-funcionario");
-
-const dataDiaInput = document.getElementById("data-dia");
-const listaPresencaEl = document.getElementById("lista-presenca");
-const totalPresentesEl = document.getElementById("total-presentes");
-
-const btnGerarDia = document.getElementById("btn-gerar-dia");
-const btnSalvarDia = document.getElementById("btn-salvar-dia");
-const btnImprimirDia = document.getElementById("btn-imprimir-dia");
-const previewDiaEl = document.getElementById("preview-dia");
-const printAreaEl = document.getElementById("print-area");
-
-const dataSemanaInput = document.getElementById("data-semana");
-const btnGerarSemana = document.getElementById("btn-gerar-semana");
-const btnImprimirSemana = document.getElementById("btn-imprimir-semana");
-const previewSemanaEl = document.getElementById("preview-semana");
-
-const listaHistoricoEl = document.getElementById("lista-historico");
-const btnApagarHistorico = document.getElementById("btn-apagar-historico");
-
-const inputLogo = document.getElementById("input-logo");
-const logoPreviewContainer = document.getElementById("logo-preview-container");
-const btnRemoverLogo = document.getElementById("btn-remover-logo");
-const btnResetRodizio = document.getElementById("btn-reset-rodizio");
-const btnLogout = document.getElementById("btn-logout");
-
-// dashboard items
-const dbTotalFunc = document.getElementById("db-total-func");
-const dbTotalHist = document.getElementById("db-total-hist");
-const dbUltimaData = document.getElementById("db-ultima-data");
-
-// -----------------------------
-// AUTENTICAÇÃO (senha fixa: "supertds")
-// -----------------------------
-const APP_PASSWORD = "supertds";
-
-function isLogged() {
-  return localStorage.getItem(STORAGE_KEYS.LOGGED) === "1";
-}
-
-function doLogin(password) {
-  if (String(password || "").trim() === APP_PASSWORD) {
-    localStorage.setItem(STORAGE_KEYS.LOGGED, "1");
-    showApp();
-    return true;
-  }
-  return false;
-}
-
-function doLogout() {
-  localStorage.removeItem(STORAGE_KEYS.LOGGED);
-  showLogin();
-}
-
-// bind login button
-if (btnLogin) {
-  btnLogin.addEventListener("click", () => {
-    const ok = doLogin(loginPasswordInput.value);
-    if (!ok) {
-      alert("Senha incorreta.");
-      loginPasswordInput.value = "";
-      loginPasswordInput.focus();
-    } else {
-      loginPasswordInput.value = "";
-    }
-  });
-  // allow Enter
-  loginPasswordInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") btnLogin.click();
-  });
-}
-
-// show/hide app
-function showLogin() {
-  if (loginScreen) loginScreen.style.display = "flex";
-  if (appContainer) appContainer.style.display = "none";
-}
-function showApp() {
-  if (loginScreen) loginScreen.style.display = "none";
-  if (appContainer) appContainer.style.display = "block";
-}
-
-// -----------------------------
-// TABS
+// TABS (corrigido)
 // -----------------------------
 document.querySelectorAll(".tab-button").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -172,21 +71,23 @@ document.querySelectorAll(".tab-button").forEach((btn) => {
 // -----------------------------
 // EQUIPE (manter ordem de cadastro)
 // -----------------------------
-if (formAddFuncionario) {
-  formAddFuncionario.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const nome = inputNomeFuncionario.value.trim();
-    if (!nome) return;
-    const novo = { id: Date.now(), nome };
-    funcionarios.push(novo);
-    saveJSON(STORAGE_KEYS.FUNCIONARIOS, funcionarios);
-    inputNomeFuncionario.value = "";
-    renderFuncionarios();
-    renderListaPresenca();
-    renderFuncoesUI();
-    updateDashboard();
-  });
-}
+const formAddFuncionario = document.getElementById("form-add-funcionario");
+const inputNomeFuncionario = document.getElementById("nome-funcionario");
+const listaFuncionariosEl = document.getElementById("lista-funcionarios");
+const totalFuncionariosEl = document.getElementById("total-funcionarios");
+
+formAddFuncionario.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nome = inputNomeFuncionario.value.trim();
+  if (!nome) return;
+  const novo = { id: Date.now(), nome };
+  funcionarios.push(novo);
+  saveJSON(STORAGE_KEYS.FUNCIONARIOS, funcionarios);
+  inputNomeFuncionario.value = "";
+  renderFuncionarios();
+  renderListaPresenca();
+  renderFuncoesUI();
+});
 
 function removerFuncionario(id) {
   if (!confirm("Remover este colaborador?")) return;
@@ -195,7 +96,6 @@ function removerFuncionario(id) {
   renderFuncionarios();
   renderListaPresenca();
   renderFuncoesUI();
-  updateDashboard();
 }
 
 function renderFuncionarios() {
@@ -204,6 +104,7 @@ function renderFuncionarios() {
   if (!funcionarios || funcionarios.length === 0) {
     listaFuncionariosEl.innerHTML = "<li>Nenhum colaborador cadastrado ainda.</li>";
   } else {
+    // ** NÃO ordenar — preservar ordem de cadastro **
     funcionarios.forEach((f) => {
       const li = document.createElement("li");
       li.className = "list-item-row";
@@ -228,21 +129,27 @@ function renderFuncionarios() {
       listaFuncionariosEl.appendChild(li);
     });
   }
-  if (totalFuncionariosEl) totalFuncionariosEl.textContent = (funcionarios ? funcionarios.length : 0).toString();
+  totalFuncionariosEl.textContent = (funcionarios ? funcionarios.length : 0).toString();
 }
 
 // -----------------------------
-// PRESENÇA DO DIA (toolbar Marcar/Desmarcar)
+// PRESENÇA DO DIA (com toolbar Marcar/Desmarcar único)
 // -----------------------------
+const dataDiaInput = document.getElementById("data-dia");
+const listaPresencaEl = document.getElementById("lista-presenca");
+const totalPresentesEl = document.getElementById("total-presentes");
+
 function initDataInputs() {
   const hoje = new Date();
   const iso = formatDateISO(hoje);
   if (dataDiaInput && !dataDiaInput.value) dataDiaInput.value = iso;
+  const dataSemanaInput = document.getElementById("data-semana");
   if (dataSemanaInput && !dataSemanaInput.value) dataSemanaInput.value = iso;
 }
 
 function ensurePresenceToolbar() {
   if (!listaPresencaEl) return;
+  // Se já existe toolbar (primeiro li com .presence-toolbar) não cria outra
   const existing = listaPresencaEl.querySelector(".presence-toolbar");
   if (existing) return;
   const toolbarDiv = document.createElement("div");
@@ -288,6 +195,7 @@ function renderListaPresenca() {
     return;
   }
 
+  // sem ordenar: manter ordem de cadastro
   funcionarios.forEach((f) => {
     const li = document.createElement("li");
     li.className = "list-item-row";
@@ -331,7 +239,7 @@ function atualizarTotalPresentes() {
 if (listaPresencaEl) listaPresencaEl.addEventListener("change", atualizarTotalPresentes);
 
 // -----------------------------
-// rodízio / lógica de geração
+// rodízio / lógica de geração (mantive seu modelo)
 // -----------------------------
 function rotateArray(arr, offset) {
   const n = arr.length;
@@ -588,8 +496,7 @@ function renderFuncoesUI() {
   almRow.style.marginBottom = "8px";
   almRow.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><div><strong>Almoço</strong> <small>(2 turmas)</small></div><div><button class="small secondary" id="btn-sel-almoco">Selecionar turmas</button></div></div><div style="margin-top:6px"><small id="sel-almoco" style="color:#374151"></small></div>`;
   container.appendChild(almRow);
-  const btnSelAlm = document.getElementById("btn-sel-almoco");
-  if (btnSelAlm) btnSelAlm.addEventListener("click", () => openMultiGroupModal("almoco", 2, ["turma1","turma2"], "Selecione pessoas para cada turma de Almoço"));
+  document.getElementById("btn-sel-almoco").addEventListener("click", () => openMultiGroupModal("almoco", 2, ["turma1","turma2"], "Selecione pessoas para cada turma de Almoço"));
 
   // LANCHE (3 turmas)
   const lanRow = document.createElement("div");
@@ -598,23 +505,18 @@ function renderFuncoesUI() {
   lanRow.style.marginBottom = "8px";
   lanRow.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><div><strong>Lanche</strong> <small>(3 turmas)</small></div><div><button class="small secondary" id="btn-sel-lanche">Selecionar turmas</button></div></div><div style="margin-top:6px"><small id="sel-lanche" style="color:#374151"></small></div>`;
   container.appendChild(lanRow);
-  const btnSelLan = document.getElementById("btn-sel-lanche");
-  if (btnSelLan) btnSelLan.addEventListener("click", () => openMultiGroupModal("lanche", 3, ["t1","t2","t3"], "Selecione pessoas para cada turma de Lanche"));
+  document.getElementById("btn-sel-lanche").addEventListener("click", () => openMultiGroupModal("lanche", 3, ["t1","t2","t3"], "Selecione pessoas para cada turma de Lanche"));
 
   updateSelectedSummaries();
 }
 
 function updateSelectedSummaries() {
-  const selBar = document.getElementById("sel-bar");
-  const selApa = document.getElementById("sel-aparadores");
-  const selAlm = document.getElementById("sel-almoco");
-  const selLan = document.getElementById("sel-lanche");
-  if (selBar) selBar.textContent = assignments.bar ? idsToNames(assignments.bar) : "Nenhum";
-  if (selApa) selApa.textContent = assignments.aparadores ? idsToNames(assignments.aparadores) : "Nenhum";
+  document.getElementById("sel-bar").textContent = assignments.bar ? idsToNames(assignments.bar) : "Nenhum";
+  document.getElementById("sel-aparadores").textContent = assignments.aparadores ? idsToNames(assignments.aparadores) : "Nenhum";
   const alm = assignments.almoco || {};
-  if (selAlm) selAlm.textContent = `Turma1: ${alm.turma1 ? idsToNames(alm.turma1) : "—"} — Turma2: ${alm.turma2 ? idsToNames(alm.turma2) : "—"}`;
+  document.getElementById("sel-almoco").textContent = `Turma1: ${alm.turma1 ? idsToNames(alm.turma1) : "—"} — Turma2: ${alm.turma2 ? idsToNames(alm.turma2) : "—"}`;
   const lan = assignments.lanche || {};
-  if (selLan) selLan.textContent = `T1: ${lan.t1 ? idsToNames(lan.t1) : "—"} — T2: ${lan.t2 ? idsToNames(lan.t2) : "—"} — T3: ${lan.t3 ? idsToNames(lan.t3) : "—"}`;
+  document.getElementById("sel-lanche").textContent = `T1: ${lan.t1 ? idsToNames(lan.t1) : "—"} — T2: ${lan.t2 ? idsToNames(lan.t2) : "—"} — T3: ${lan.t3 ? idsToNames(lan.t3) : "—"}`;
 }
 
 function idsToNames(list) {
@@ -823,6 +725,12 @@ function openMultiGroupModal(roleKey, groupsCount, groupKeys, title) {
 // -----------------------------
 // botões principais Escala do Dia
 // -----------------------------
+const btnGerarDia = document.getElementById("btn-gerar-dia");
+const btnSalvarDia = document.getElementById("btn-salvar-dia");
+const btnImprimirDia = document.getElementById("btn-imprimir-dia");
+const previewDiaEl = document.getElementById("preview-dia");
+const printAreaEl = document.getElementById("print-area");
+
 if (btnGerarDia) {
   btnGerarDia.addEventListener("click", () => {
     const presentes = getPresentesDoDia();
@@ -841,20 +749,18 @@ if (btnGerarDia) {
     if (btnImprimirDia) btnImprimirDia.disabled = false;
     rodizioOffset = rodizioOffset + 1;
     saveJSON(STORAGE_KEYS.RODIZIO_OFFSET, rodizioOffset);
-    updateDashboard();
   });
 }
 
 if (btnSalvarDia) {
   btnSalvarDia.addEventListener("click", () => {
     if (!ultimoResultadoDia) return;
-    const hist = loadHistorico();
+    const hist = loadJSON(STORAGE_KEYS.HISTORICO, {});
     const key = ultimoResultadoDia.dataISO;
     hist[key] = ultimoResultadoDia;
-    saveHistorico(hist);
+    saveJSON(STORAGE_KEYS.HISTORICO, hist);
     alert("Escala do dia salva no histórico.");
     renderHistorico();
-    updateDashboard();
   });
 }
 
@@ -865,14 +771,18 @@ if (btnImprimirDia) {
     printAreaEl.innerHTML = "";
     const doc = renderEscalaDocumento(ultimoResultadoDia);
     printAreaEl.appendChild(doc);
-    // give browser a moment to render the image (if dataURL) - usually immediate
     window.print();
   });
 }
 
 // -----------------------------
-// ESCALA DA SEMANA
+// ESCALA DA SEMANA (mantive funcionalidade)
 // -----------------------------
+const dataSemanaInput = document.getElementById("data-semana");
+const btnGerarSemana = document.getElementById("btn-gerar-semana");
+const btnImprimirSemana = document.getElementById("btn-imprimir-semana");
+const previewSemanaEl = document.getElementById("preview-semana");
+
 if (btnGerarSemana) {
   btnGerarSemana.addEventListener("click", () => {
     const presentes = getPresentesDoDia();
@@ -900,7 +810,6 @@ if (btnGerarSemana) {
     if (btnImprimirSemana) btnImprimirSemana.disabled = false;
     rodizioOffset = offsetLocal;
     saveJSON(STORAGE_KEYS.RODIZIO_OFFSET, rodizioOffset);
-    updateDashboard();
   });
 }
 if (btnImprimirSemana) {
@@ -916,11 +825,11 @@ if (btnImprimirSemana) {
 // -----------------------------
 // HISTÓRICO
 // -----------------------------
-function loadHistorico() { return loadJSON(STORAGE_KEYS.HISTORICO, {}); }
-function saveHistorico(obj) { saveJSON(STORAGE_KEYS.HISTORICO, obj); }
+const listaHistoricoEl = document.getElementById("lista-historico");
+const btnApagarHistorico = document.getElementById("btn-apagar-historico");
 
 function renderHistorico() {
-  const hist = loadHistorico();
+  const hist = loadJSON(STORAGE_KEYS.HISTORICO, {});
   const datas = Object.keys(hist).sort();
   if (!listaHistoricoEl) return;
   listaHistoricoEl.innerHTML = "";
@@ -943,7 +852,6 @@ function renderHistorico() {
       ultimoResultadoDia = escala;
       if (previewDiaEl) { previewDiaEl.innerHTML = ""; previewDiaEl.classList.remove("empty"); previewDiaEl.appendChild(renderEscalaDocumento(escala)); }
       if (btnImprimirDia) btnImprimirDia.disabled = false;
-      // switch to "Escala do Dia" tab
       document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
       const tabBtn = document.querySelector('.tab-button[data-target="section-dia"]'); if (tabBtn) tabBtn.classList.add("active");
       document.querySelectorAll(".tab-section").forEach(s => s.classList.remove("active")); const sec = document.getElementById("section-dia"); if (sec) sec.classList.add("active");
@@ -951,11 +859,10 @@ function renderHistorico() {
     const btnDel = document.createElement("button"); btnDel.className = "danger small"; btnDel.textContent = "Apagar";
     btnDel.addEventListener("click", () => {
       if (!confirm(`Apagar escala de ${formatDateBR(dataISO)} do histórico?`)) return;
-      const h = loadHistorico();
+      const h = loadJSON(STORAGE_KEYS.HISTORICO, {});
       delete h[dataISO];
-      saveHistorico(h);
+      saveJSON(STORAGE_KEYS.HISTORICO, h);
       renderHistorico();
-      updateDashboard();
     });
     actions.appendChild(btnVer); actions.appendChild(btnDel);
     li.appendChild(main); li.appendChild(actions); listaHistoricoEl.appendChild(li);
@@ -964,15 +871,19 @@ function renderHistorico() {
 if (btnApagarHistorico) {
   btnApagarHistorico.addEventListener("click", () => {
     if (!confirm("Tem certeza que deseja apagar TODO o histórico de escalas? Essa ação não pode ser desfeita.")) return;
-    saveHistorico({});
+    saveJSON(STORAGE_KEYS.HISTORICO, {});
     renderHistorico();
-    updateDashboard();
   });
 }
 
 // -----------------------------
-// CONFIG (logo, rodízio, logout)
+// CONFIG (logo, rodízio)
 // -----------------------------
+const inputLogo = document.getElementById("input-logo");
+const logoPreviewContainer = document.getElementById("logo-preview-container");
+const btnRemoverLogo = document.getElementById("btn-remover-logo");
+const btnResetRodizio = document.getElementById("btn-reset-rodizio");
+
 function renderLogoPreview() {
   if (!logoPreviewContainer) return;
   const logoData = localStorage.getItem(STORAGE_KEYS.LOGO);
@@ -981,26 +892,11 @@ function renderLogoPreview() {
     const img = document.createElement("img");
     img.src = logoData;
     img.alt = "Logo da barraca";
-    img.style.maxWidth = "220px";
-    img.style.maxHeight = "110px";
-    img.style.objectFit = "contain";
     logoPreviewContainer.appendChild(img);
   } else {
     logoPreviewContainer.innerHTML = "<p>Nenhuma logo selecionada.</p>";
   }
-
-  // Atualiza a pré-visualização da última escala (se existir)
-  if (ultimoResultadoDia && previewDiaEl && !previewDiaEl.classList.contains("empty")) {
-    previewDiaEl.innerHTML = "";
-    previewDiaEl.appendChild(renderEscalaDocumento(ultimoResultadoDia));
-  }
-  // também atualiza preview semanal
-  if (ultimoResultadoSemana && previewSemanaEl && !previewSemanaEl.classList.contains("empty")) {
-    previewSemanaEl.innerHTML = "";
-    ultimoResultadoSemana.forEach(esc => previewSemanaEl.appendChild(renderEscalaDocumento(esc)));
-  }
 }
-
 if (inputLogo) {
   inputLogo.addEventListener("change", () => {
     const file = inputLogo.files[0];
@@ -1013,7 +909,6 @@ if (inputLogo) {
     reader.readAsDataURL(file);
   });
 }
-
 if (btnRemoverLogo) {
   btnRemoverLogo.addEventListener("click", () => {
     if (!confirm("Remover logo atual?")) return;
@@ -1021,20 +916,12 @@ if (btnRemoverLogo) {
     renderLogoPreview();
   });
 }
-
 if (btnResetRodizio) {
   btnResetRodizio.addEventListener("click", () => {
     if (!confirm("Resetar rodízio? Isso faz a contagem voltar ao início.")) return;
     rodizioOffset = 0;
     saveJSON(STORAGE_KEYS.RODIZIO_OFFSET, rodizioOffset);
     alert("Rodízio resetado.");
-  });
-}
-
-if (btnLogout) {
-  btnLogout.addEventListener("click", () => {
-    if (!confirm("Deseja realmente sair do aplicativo?")) return;
-    doLogout();
   });
 }
 
@@ -1065,47 +952,28 @@ function exportarCSVEscala(escala) {
   URL.revokeObjectURL(url);
 }
 
-// adiciona botão Exportar Excel (CSV) próximo ao Gerar (se ainda não existir)
+// adiciona botão Exportar Excel (CSV) próximo ao Gerar
 (function addExportButtons() {
   const actions = document.querySelector("#section-dia .actions-row");
   if (!actions) return;
-  // avoid duplicate
-  if (!actions.querySelector(".btn-export-csv")) {
-    const btnCsv = document.createElement("button");
-    btnCsv.className = "primary btn-export-csv";
-    btnCsv.textContent = "Exportar Excel (CSV)";
-    btnCsv.style.marginLeft = "6px";
-    btnCsv.addEventListener("click", () => exportarCSVEscala(ultimoResultadoDia));
-    actions.appendChild(btnCsv);
-  }
+  const btnCsv = document.createElement("button");
+  btnCsv.className = "primary";
+  btnCsv.textContent = "Exportar Excel (CSV)";
+  btnCsv.style.marginLeft = "6px";
+  btnCsv.addEventListener("click", () => exportarCSVEscala(ultimoResultadoDia));
+  actions.appendChild(btnCsv);
 
+  // também botão no preview-card
   const previewCard = document.querySelector("#section-dia .preview-card");
-  if (previewCard && !previewCard.querySelector(".btn-export-csv-prev")) {
+  if (previewCard) {
     const btnCsvPrev = document.createElement("button");
-    btnCsvPrev.className = "primary btn-export-csv-prev";
+    btnCsvPrev.className = "primary";
     btnCsvPrev.textContent = "Exportar Excel (CSV)";
     btnCsvPrev.style.marginTop = "8px";
     btnCsvPrev.addEventListener("click", () => exportarCSVEscala(ultimoResultadoDia));
     previewCard.appendChild(btnCsvPrev);
   }
 })();
-
-// -----------------------------
-// DASHBOARD (resumos simples)
-// -----------------------------
-function updateDashboard() {
-  const hist = loadHistorico();
-  const histKeys = Object.keys(hist || {});
-  if (dbTotalFunc) dbTotalFunc.textContent = (funcionarios ? funcionarios.length : 0).toString();
-  if (dbTotalHist) dbTotalHist.textContent = histKeys.length.toString();
-  if (dbUltimaData) {
-    if (histKeys.length === 0) dbUltimaData.textContent = "—";
-    else {
-      const lastKey = histKeys.sort().slice(-1)[0];
-      dbUltimaData.textContent = `${formatDateBR(lastKey)} — ${weekdayName(lastKey)}`;
-    }
-  }
-}
 
 // -----------------------------
 // inicialização
@@ -1117,12 +985,54 @@ function init() {
   renderLogoPreview();
   renderHistorico();
   ensureFuncoesContainer();
-  updateSelectedSummaries();
-  updateDashboard();
-
-  // decide mostrar login ou app
-  if (isLogged()) showApp();
-  else showLogin();
 }
-
 document.addEventListener("DOMContentLoaded", init);
+
+// -----------------------------
+// helpers usados no historic / storage
+// -----------------------------
+function loadHistorico() { return loadJSON(STORAGE_KEYS.HISTORICO, {}); }
+function saveHistorico(obj) { saveJSON(STORAGE_KEYS.HISTORICO, obj); }
+function saveAssignments(obj) { saveJSON(STORAGE_KEYS.ASSIGNMENTS, obj); }
+
+// -----------------------------
+// renderHistorico (definido aqui pois usa helpers)
+// -----------------------------
+function renderHistorico() {
+  const listaHistoricoEl = document.getElementById("lista-historico");
+  const hist = loadHistorico();
+  const datas = Object.keys(hist).sort();
+  if (!listaHistoricoEl) return;
+  listaHistoricoEl.innerHTML = "";
+  if (datas.length === 0) {
+    listaHistoricoEl.innerHTML = "<li>Nenhuma escala salva ainda.</li>";
+    return;
+  }
+  datas.forEach(dataISO => {
+    const escala = hist[dataISO];
+    const li = document.createElement("li"); li.className = "list-item-row";
+    const main = document.createElement("div"); main.className = "list-item-main";
+    const spanNome = document.createElement("span"); spanNome.className = "nome";
+    spanNome.textContent = `${formatDateBR(dataISO)} — ${weekdayName(dataISO)}`;
+    const small = document.createElement("small"); small.className = "historico-meta";
+    small.textContent = `Presentes: ${escala.presentes ? escala.presentes.length : 0}`;
+    main.appendChild(spanNome); main.appendChild(small);
+    const actions = document.createElement("div"); actions.className = "list-item-actions";
+    const btnVer = document.createElement("button"); btnVer.className = "secondary small"; btnVer.textContent = "Ver / Imprimir";
+    btnVer.onclick = () => {
+      ultimoResultadoDia = escala;
+      if (previewDiaEl) { previewDiaEl.innerHTML = ""; previewDiaEl.classList.remove("empty"); previewDiaEl.appendChild(renderEscalaDocumento(escala)); }
+      if (btnImprimirDia) btnImprimirDia.disabled = false;
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+      const tabBtn = document.querySelector('.tab-button[data-target="section-dia"]'); if (tabBtn) tabBtn.classList.add("active");
+      document.querySelectorAll(".tab-section").forEach(s => s.classList.remove("active")); const sec = document.getElementById("section-dia"); if (sec) sec.classList.add("active");
+    };
+    const btnDel = document.createElement("button"); btnDel.className = "danger small"; btnDel.textContent = "Apagar";
+    btnDel.onclick = () => {
+      if (!confirm(`Apagar escala de ${formatDateBR(dataISO)} do histórico?`)) return;
+      const h = loadHistorico(); delete h[dataISO]; saveHistorico(h); renderHistorico();
+    };
+    actions.appendChild(btnVer); actions.appendChild(btnDel);
+    li.appendChild(main); li.appendChild(actions); listaHistoricoEl.appendChild(li);
+  });
+}
