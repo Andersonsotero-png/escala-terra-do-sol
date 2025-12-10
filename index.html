@@ -1,37 +1,35 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <title>Escala Terra do Sol</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN ------------------------------------------------------------ -->
 <div id="login-screen" class="login-screen">
   <div class="login-box">
-    <div class="login-logo">🌞</div>
     <h1>Terra do Sol</h1>
-    <p class="muted">Acesso restrito ao sistema de escalas</p>
-    <input id="login-password" type="password" placeholder="Digite a senha" />
-    <div class="login-actions">
-      <button id="btn-login" class="primary">Entrar</button>
-    </div>
+    <p>Acesso restrito</p>
+
+    <input type="password" id="login-password" placeholder="Digite a senha" />
+    <button id="btn-login" class="primary">Entrar</button>
+
     <p class="login-info">Senha padrão: <strong>supertds</strong></p>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app" class="app" style="display:none;">
+<!-- APP --------------------------------------------------------------- -->
+<div id="app" style="display:none">
 
-  <header class="app-header center">
-    <div class="header-top-line"></div>
-    <div class="header-content">
-      <div class="logo-big">🌞</div>
-      <h1 class="brand">Terra do Sol</h1>
-      <p class="subtitle">ESCALA OPERACIONAL</p>
-      <p class="date-line" id="header-date">—</p>
+  <header class="app-header">
+    <div class="logo-mini">🌞</div>
+    <div class="title-group">
+      <h1>Terra do Sol</h1>
+      <p>Gerenciador de Escalas</p>
     </div>
   </header>
 
@@ -45,33 +43,38 @@
   </nav>
 
   <main>
-    <!-- DASHBOARD -->
+
+    <!-- DASHBOARD --------------------------------------------------- -->
     <section id="section-dashboard" class="tab-section active">
       <h2>Dashboard Geral</h2>
+
       <div class="dashboard-grid">
         <div class="dash-card">
-          <div class="dash-title">Total de Colaboradores</div>
-          <div id="db-total-func" class="dash-number">0</div>
+          <h3>Total de Colaboradores</h3>
+          <p id="db-total-func" class="dash-number">0</p>
         </div>
+
         <div class="dash-card">
-          <div class="dash-title">Escalas Salvas</div>
-          <div id="db-total-hist" class="dash-number">0</div>
+          <h3>Escalas Salvas</h3>
+          <p id="db-total-hist" class="dash-number">0</p>
         </div>
+
         <div class="dash-card">
-          <div class="dash-title">Última Escala</div>
-          <div id="db-ultima-data" class="dash-number-small">—</div>
+          <h3>Última Escala Gerada</h3>
+          <p id="db-ultima-data" class="dash-number-small">—</p>
         </div>
       </div>
+
     </section>
 
-    <!-- EQUIPE -->
+    <!-- EQUIPE -------------------------------------------------------- -->
     <section id="section-equipe" class="tab-section">
       <h2>Cadastro de Equipe</h2>
 
-      <form id="form-add-funcionario" class="card form-card">
+      <form id="form-add-funcionario" class="card">
         <label for="nome-funcionario">Nome do colaborador</label>
         <div class="inline-form">
-          <input type="text" id="nome-funcionario" placeholder="Ex: João, Maria..." required />
+          <input type="text" id="nome-funcionario" placeholder="Ex: João..." required />
           <button type="submit" class="primary">Adicionar</button>
         </div>
       </form>
@@ -79,82 +82,77 @@
       <div class="card">
         <div class="card-header-row">
           <h3>Lista de colaboradores</h3>
-          <span id="total-funcionarios" class="pill">0</span>
+          <span id="total-funcionarios" class="badge">0</span>
         </div>
         <ul id="lista-funcionarios" class="list"></ul>
       </div>
     </section>
 
-    <!-- ESCALA DO DIA -->
+    <!-- ESCALA DO DIA ------------------------------------------------ -->
     <section id="section-dia" class="tab-section">
       <h2>Escala do Dia</h2>
 
-      <div class="grid-2">
-        <div class="card">
-          <label for="data-dia">Data da escala</label>
-          <input type="date" id="data-dia" />
-        </div>
-
-        <div class="card">
-          <label>Controles</label>
-          <div class="actions-row">
-            <button id="btn-gerar-dia" class="primary">Gerar escala</button>
-            <button id="btn-salvar-dia" class="secondary" disabled>Salvar</button>
-            <button id="btn-imprimir-dia" class="primary" disabled>Imprimir</button>
-          </div>
-        </div>
+      <div class="card">
+        <label>Data da escala</label>
+        <input type="date" id="data-dia">
       </div>
 
       <div class="card">
         <div class="card-header-row">
-          <h3>Quem está presente hoje?</h3>
-          <span id="total-presentes" class="pill">0</span>
+          <h3>Quem está presente?</h3>
+          <span id="total-presentes" class="badge">0</span>
         </div>
         <ul id="lista-presenca" class="list"></ul>
       </div>
 
+      <div class="actions-row">
+        <button id="btn-gerar-dia" class="primary">Gerar escala</button>
+        <button id="btn-salvar-dia" class="secondary" disabled>Salvar no histórico</button>
+      </div>
+
       <section class="card preview-card">
-        <h3>Pré-visualização (igual à impressão)</h3>
+        <h3>Pré-visualização</h3>
         <div id="preview-dia" class="preview-area empty">
-          <p>Nenhuma escala gerada ainda.</p>
+          <p>Nenhuma escala gerada.</p>
         </div>
+        <button id="btn-imprimir-dia" class="primary" disabled>Imprimir</button>
       </section>
     </section>
 
-    <!-- ESCALA DA SEMANA -->
+    <!-- SEMANA -------------------------------------------------------- -->
     <section id="section-semana" class="tab-section">
       <h2>Escala da Semana</h2>
 
       <div class="card">
-        <label for="data-semana">Data inicial</label>
-        <input type="date" id="data-semana" />
-        <p class="tip">Gera 7 dias a partir dessa data.</p>
-        <div class="actions-row" style="margin-top:10px;">
-          <button id="btn-gerar-semana" class="primary">Gerar semana</button>
-          <button id="btn-imprimir-semana" class="primary" disabled>Imprimir semana</button>
-        </div>
+        <label>Data inicial</label>
+        <input type="date" id="data-semana">
+      </div>
+
+      <div class="actions-row">
+        <button id="btn-gerar-semana" class="primary">Gerar Semana</button>
       </div>
 
       <section class="card preview-card">
         <h3>Pré-visualização da semana</h3>
         <div id="preview-semana" class="preview-area empty">
-          <p>Nenhuma escala semanal gerada ainda.</p>
+          <p>Nenhuma escala semanal gerada.</p>
         </div>
+        <button id="btn-imprimir-semana" class="primary" disabled>Imprimir semana</button>
       </section>
     </section>
 
-    <!-- HISTÓRICO -->
+    <!-- HISTÓRICO ----------------------------------------------------- -->
     <section id="section-historico" class="tab-section">
       <h2>Histórico de Escalas</h2>
+
       <div class="card">
         <ul id="lista-historico" class="list"></ul>
       </div>
-      <div class="actions-row">
-        <button id="btn-apagar-historico" class="danger">Apagar todo histórico</button>
-      </div>
+
+      <button id="btn-apagar-historico" class="danger">Apagar tudo</button>
     </section>
 
-    <!-- CONFIG -->
+    <!-- CONFIGURAÇÕES ------------------------------------------------ -->
     <section id="section-config" class="tab-section">
       <h2>Configurações</h2>
 
@@ -162,29 +160,27 @@
         <h3>Logo da barraca</h3>
         <input type="file" id="input-logo" accept="image/*" />
         <div id="logo-preview-container" class="logo-preview"></div>
-        <div style="margin-top:8px;">
-          <button id="btn-remover-logo" class="secondary">Remover logo</button>
-        </div>
+        <button id="btn-remover-logo" class="secondary">Remover logo</button>
       </div>
 
       <div class="card">
         <h3>Rodízio</h3>
-        <p class="tip">Controla o deslocamento do rodízio automático.</p>
         <button id="btn-reset-rodizio" class="secondary">Resetar rodízio</button>
       </div>
 
       <div class="card">
-        <h3>Conta</h3>
-        <button id="btn-logout" class="danger">Sair do aplicativo</button>
+        <h3>Sair do aplicativo</h3>
+        <button id="btn-logout" class="danger">Sair</button>
       </div>
     </section>
+
   </main>
 
 </div>
 
-<!-- Área para impressão (injetada dinamicamente) -->
 <div id="print-area"></div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
