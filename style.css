@@ -1,144 +1,302 @@
-/* ---------------------------
-   Base44-inspired theme - Terra do Sol
-   Colors from your image:
-   teal: #3AAFA9
-   teal-light: #64C7C0
-   orange: #F18F01
-   bg: #FFFDF6 (very light warm)
-----------------------------*/
+/* -----------------------------------------------------
+   RESET / BASE
+----------------------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
-/* Reset */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html,body { height: 100%; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; background:#FFFDF6; color:#102021; }
+body {
+  background: #F4F4F4;
+  color: #111827;
+  min-height: 100vh;
+}
 
-/* Login screen */
+/* -----------------------------------------------------
+   LOGIN
+----------------------------------------------------- */
 .login-screen {
-  position: fixed; inset: 0;
-  display:flex; align-items:center; justify-content:center;
-  background: linear-gradient(180deg, rgba(58,175,169,0.98), rgba(100,199,192,0.95));
+  position: fixed;
+  inset: 0;
+  background: #3AAFA9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 .login-box {
-  width: 92%; max-width:420px; background:#fff; border-radius:12px;
-  padding:22px; text-align:center; border:4px solid rgba(255,255,255,0.06);
-  box-shadow: 0 8px 32px rgba(15,60,70,0.12);
+  background: #FFFFFF;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+  border: 3px solid #3AAFA9;
 }
-.login-logo { font-size:46px; margin-bottom:6px; }
-.login-box h1 { font-size:24px; color:#0F3C46; margin-bottom:6px; }
-.muted { color:#6b7280; margin-bottom:12px; }
-.login-box input{ width:100%; padding:12px 10px; border-radius:8px; border:2px solid #3AAFA9; margin-bottom:12px; font-size:15px;}
-.login-actions { display:flex; justify-content:center; gap:8px; }
-.login-info { margin-top:10px; font-size:13px; color:#6b7280; }
 
-/* App header (centered, like printed doc) */
-.app-header { padding:18px 0 8px 0; background:transparent; text-align:center; }
-.header-top-line { height:6px; background:#64C7C0; width:98%; margin: 6px auto 12px; border-radius:4px; box-shadow: 0 1px 0 rgba(0,0,0,0.03) inset; max-width:900px;}
-.header-content { max-width:900px; margin: 0 auto; padding: 0 14px; }
-.logo-big { font-size:34px; margin-bottom:6px; }
-.brand { color:#2A8A85; font-size:26px; font-weight:700; letter-spacing:0.2px; }
-.subtitle { font-size:20px; font-weight:700; color:#15212A; margin-top:6px; }
-.date-line { color:#4b5563; margin-top:6px; }
+.login-box h1 {
+  font-size: 26px;
+  margin-bottom: 6px;
+  color: #0F3C46;
+}
 
-/* Tabs */
-.tabs { display:flex; gap:0; background:transparent; justify-content:center; margin-top:12px; }
+.login-box p {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #3AAFA9;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.login-info {
+  font-size: 12px;
+  color: #555;
+  margin-top: 10px;
+}
+
+/* -----------------------------------------------------
+   CABEÇALHO
+----------------------------------------------------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, #3AAFA9, #64C7C0);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.logo-mini {
+  width: 45px;
+  height: 45px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* -----------------------------------------------------
+   TABS
+----------------------------------------------------- */
+.tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid #E5E7EB;
+  overflow-x: auto;
+}
+
 .tab-button {
-  padding:10px 14px; border-radius:8px; margin:0 6px; background:#fff;
-  border:2px solid transparent; cursor:pointer; font-weight:700; color:#4b5563;
-  box-shadow: 0 4px 12px rgba(15,60,70,0.04);
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  background: #fff;
+  color: #6B7280;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
 }
-.tab-button.active { color:#3AAFA9; border-color: rgba(58,175,169,0.18); box-shadow: 0 6px 18px rgba(58,175,169,0.06); }
 
-/* Main layout */
-main { max-width: 960px; margin: 18px auto; padding: 0 14px 36px; }
+.tab-button.active {
+  border-color: #3AAFA9;
+  color: #3AAFA9;
+}
 
-/* Headings */
-h2 { font-size:20px; color:#0F3C46; margin-bottom:10px; }
-h3 { font-size:15px; color:#0F3C46; margin-bottom:8px; }
+/* -----------------------------------------------------
+   MAIN LAYOUT
+----------------------------------------------------- */
+main {
+  padding: 14px;
+  max-width: 900px;
+  margin: auto;
+}
 
-/* Grid helpers */
-.grid-2 { display:grid; grid-template-columns: 1fr 320px; gap:12px; align-items:start; }
-@media (max-width:880px){ .grid-2{ grid-template-columns: 1fr; } .tabs{ flex-wrap:wrap; } }
+.tab-section {
+  display: none;
+}
 
-/* Cards */
+.tab-section.active {
+  display: block;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+/* -----------------------------------------------------
+   DASHBOARD
+----------------------------------------------------- */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.dash-card {
+  background: #FFFFFF;
+  border: 2px solid #3AAFA9;
+  padding: 14px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.dash-number {
+  font-size: 34px;
+  font-weight: bold;
+  color: #F18F01;
+}
+
+.dash-number-small {
+  font-size: 18px;
+  color: #0F3C46;
+}
+
+/* -----------------------------------------------------
+   CARDS
+----------------------------------------------------- */
 .card {
-  background:#fff; border-radius:10px; padding:14px; margin-bottom:12px;
-  border:2px solid #EDEDED; box-shadow: 0 6px 18px rgba(15,60,70,0.03);
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 2px solid #E5E7EB;
+  padding: 14px;
+  margin-bottom: 12px;
 }
-.form-card { display:flex; gap:8px; align-items:center; justify-content:space-between; }
 
-/* card header row */
-.card-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.pill { background:#3AAFA9; color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; }
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-/* Inline form */
-.inline-form { display:flex; gap:8px; width:100%; align-items:center; }
-.inline-form input{ flex:1; padding:10px; border-radius:8px; border:2px solid #E6F3F1; }
-.inline-form button{ padding:10px 14px; }
+.badge {
+  background: #3AAFA9;
+  color: white;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 50px;
+}
 
-/* Buttons */
-button { border:none; cursor:pointer; border-radius:999px; font-weight:800; letter-spacing:0.2px; }
-button.primary { background:linear-gradient(90deg,#3AAFA9,#64C7C0); color:#fff; padding:10px 14px; }
-button.secondary { background:#fff; border:2px solid #E5E7EB; color:#1B2B2B; padding:8px 12px; }
-button.danger { background:#F65E4E; color:#fff; padding:8px 12px; }
-button.small { padding:6px 10px; font-size:13px; }
+/* -----------------------------------------------------
+   FORMULÁRIOS
+----------------------------------------------------- */
+label {
+  font-size: 14px;
+  font-weight: 600;
+}
 
-/* Lists */
-.list { list-style:none; }
-.list li { padding:8px 0; border-bottom:1px solid #F4F4F4; display:flex; justify-content:space-between; align-items:center; }
-.list .list-item-main { display:flex; gap:10px; align-items:center; }
-.nome { font-size:15px; color:#0F3C46; }
+input[type='text'],
+input[type='date'] {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 2px solid #D1D5DB;
+}
 
-/* Tips */
-.tip { color:#6b7280; font-size:13px; margin-top:6px; }
+input:focus {
+  border-color: #3AAFA9;
+  box-shadow: 0 0 4px rgba(58,175,169,0.4);
+}
 
-/* Preview / documento */
-.preview-area { min-height:140px; background:#fff; border:2px solid #EAEAEA; padding:12px; border-radius:10px; }
-.preview-area.empty { display:flex; align-items:center; justify-content:center; color:#9CA3AF; }
+/* -----------------------------------------------------
+   BOTÕES
+----------------------------------------------------- */
+button {
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+}
 
-/* escala-documento (impressão + visual no preview) */
+button.primary {
+  background: #3AAFA9;
+  color: white;
+}
+
+button.secondary {
+  background: #E5E7EB;
+}
+
+button.danger {
+  background: #EF4444;
+  color: white;
+}
+
+button.small {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+/* -----------------------------------------------------
+   PREVIEW / DOCUMENTO
+----------------------------------------------------- */
+.preview-area {
+  background: white;
+  border: 2px solid #E5E7EB;
+  padding: 14px;
+  min-height: 140px;
+  border-radius: 8px;
+}
+
+.preview-area.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #9CA3AF;
+}
+
 .escala-documento {
-  max-width:900px; margin: 8px auto; background:#fff; border-radius:12px;
-  padding:14px; border:3px solid #EDEDED; position:relative;
+  background: white;
+  border: 2px solid #3AAFA9;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
-.escala-header { text-align:center; margin-bottom:10px; }
-.escala-header img { max-width:220px; max-height:110px; display:block; margin:0 auto 6px; object-fit:contain; }
-.escala-header h1 { font-size:18px; margin-bottom:4px; color:#0F3C46; font-weight:800;}
-.escala-header h2 { font-size:15px; color:#15212A; margin-bottom:6px; }
-.escala-header p { color:#6b7280; }
 
-/* sections with colored title bars */
-.escala-section { margin-top:10px; }
 .escala-section h3 {
-  display:inline-block; padding:8px 12px; border-radius:8px; color:#fff; font-weight:800; margin-bottom:8px;
+  background: #3AAFA9;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
 }
-.escala-section.almoço h3, .escala-section.bar h3 { background:#3AAFA9; }
-.escala-section.aparadores h3, .escala-section.lanche h3 { background:#F18F01; }
 
-/* tables inside doc */
-.escala-table { width:100%; border-collapse:collapse; margin-top:6px; }
-.escala-table th, .escala-table td { border:1px solid #EFEFEF; padding:8px; font-size:14px; color:#0F3C46; text-align:left; }
-.escala-table th { background:#FBFBFB; font-weight:700; }
+.escala-section:nth-child(3) h3,
+.escala-section:nth-child(5) h3 {
+  background: #F18F01;
+}
 
-/* Dashboard cards */
-.dashboard-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:12px; }
-.dash-card { padding:18px; border-radius:10px; background:#fff; border:2px solid #EDEDED; text-align:center; }
-.dash-title { font-size:13px; color:#6b7280; margin-bottom:8px; }
-.dash-number { font-size:30px; color:#F18F01; font-weight:800; }
-.dash-number-small { font-size:16px; color:#0F3C46; }
+/* -----------------------------------------------------
+   IMPRESSÃO
+----------------------------------------------------- */
+#print-area { display: none; }
 
-/* Logo preview */
-.logo-preview { min-height:80px; display:flex; align-items:center; justify-content:center; border:2px dashed #EDEDED; border-radius:8px; padding:10px; background:#fff; }
-
-/* small helpers */
-.actions-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-
-/* print area hidden in UI */
-#print-area { display:none; }
-
-/* print rules */
 @media print {
-  body { background:#fff; }
-  #app, header, nav, main { display:none !important; }
-  #print-area { display:block; padding:0; margin:0; }
-  #print-area .escala-documento { border-radius:0; box-shadow:none; page-break-after:always; border:2px solid #3AAFA9; }
-  #print-area img { max-width:220px !important; max-height:110px !important; object-fit:contain !important; display:block !important; margin:0 auto 6px !important; }
+  header, nav, main { display: none !important; }
+  #print-area { display: block !important; }
+  #print-area img {
+    max-width: 220px !important;
+    max-height: 110px !important;
+    margin: 0 auto 6px !important;
+    object-fit: contain;
+  }
 }
